@@ -1,0 +1,21 @@
+# Test runner Dockerfile for integration tests
+FROM debian:bookworm-slim
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    jq \
+    postgresql-client \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /tests
+
+# Copy test scripts
+COPY tests/integration/ /tests/
+
+# Make scripts executable
+RUN chmod +x /tests/*.sh
+
+# Default command runs all tests
+CMD ["/tests/run_all_tests.sh"]

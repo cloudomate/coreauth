@@ -1,0 +1,24 @@
+# Build artifacts
+target/
+*.o
+*.so
+*.rlib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Environment
+.env
+.env.*
+
+# Documentation
+*.md
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log

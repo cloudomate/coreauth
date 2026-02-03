@@ -1,0 +1,115 @@
+-- Drop existing audit_logs table if it exists (different structure)
+DROP TABLE IF EXISTS audit_logs CASCADE;
+
+-- Create audit log event types
+DO $$ BEGIN
+    CREATE TYPE audit_event_category AS ENUM (
+        'authentication',
+        'authorization',
+        'user_management',
+        'tenant_management',
+        'security',
+        'admin',
+        'system'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- Audit logs table (immutable, append-only)
+CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+
+    -- Event information
+    event_type VARCHAR(100) NOT NULL,        -- e.g., "user.login", "user.created", "role.assigned"
+    event_category audit_event_category NOT NULL,
+    event_action VARCHAR(50) NOT NULL,       -- e.g., "create", "update", "delete", "access"
+
+    -- Actor (who performed the action)
+    actor_type VARCHAR(50),                   -- "user", "application", "system"
+    actor_id VARCHAR(255),                    -- User ID, application ID, or "system"
+    actor_name VARCHAR(255),                  -- Human-readable name
+    actor_ip_address INET,                    -- IP address of the actor
+    actor_user_agent TEXT,                    -- User agent string
+
+    -- Target (what was affected)
+    target_type VARCHAR(50),                  -- "user", "role", "tenant", "application", etc.
+    target_id VARCHAR(255),                   -- ID of the affected resource
+    target_name VARCHAR(255),                 -- Human-readable name
+
+    -- Event details
+    description TEXT,                         -- Human-readable description
+    metadata JSONB,                          -- Additional structured data
+
+    -- Result
+    status VARCHAR(20) NOT NULL,             -- "success", "failure", "error"
+    error_message TEXT,                      -- Error details if status is failure/error
+
+    -- Request context
+    request_id VARCHAR(255),                 -- Trace/correlation ID
+    session_id UUID,                         -- Session ID if applicable
+
+    -- Timestamp
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+
+    -- Immutability constraint (no updates allowed)
+    CONSTRAINT no_updates CHECK (created_at IS NOT NULL)
+);
+
+-- Indexes for efficient querying
+CREATE INDEX idx_audit_logs_tenant_created ON audit_logs(tenant_id, created_at DESC);
+CREATE INDEX idx_audit_logs_event_type ON audit_logs(event_type, created_at DESC);
+CREATE INDEX idx_audit_logs_event_category ON audit_logs(event_category, created_at DESC);
+CREATE INDEX idx_audit_logs_actor ON audit_logs(tenant_id, actor_type, actor_id, created_at DESC);
+CREATE INDEX idx_audit_logs_target ON audit_logs(tenant_id, target_type, target_id, created_at DESC);
+CREATE INDEX idx_audit_logs_status ON audit_logs(status, created_at DESC);
+CREATE INDEX idx_audit_logs_request_id ON audit_logs(request_id) WHERE request_id IS NOT NULL;
+
+-- GIN index for JSONB metadata queries
+CREATE INDEX idx_audit_logs_metadata ON audit_logs USING GIN (metadata);
+
+-- Partial indexes for common queries
+CREATE INDEX idx_audit_logs_failures ON audit_logs(tenant_id, created_at DESC)
+    WHERE status IN ('failure', 'error');
+CREATE INDEX idx_audit_logs_security ON audit_logs(tenant_id, created_at DESC)
+    WHERE event_category = 'security';
+
+-- Function to prevent updates to audit logs (immutability enforcement)
+CREATE OR REPLACE FUNCTION prevent_audit_log_updates()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        RAISE EXCEPTION 'Audit logs are immutable and cannot be updated';
+    END IF;
+    IF TG_OP = 'DELETE' THEN
+        RAISE EXCEPTION 'Audit logs are immutable and cannot be deleted';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to enforce immutability
+CREATE TRIGGER audit_logs_immutable
+    BEFORE UPDATE OR DELETE ON audit_logs
+    FOR EACH ROW
+    EXECUTE FUNCTION prevent_audit_log_updates();
+
+-- Table partitioning by month (for better performance with large datasets)
+-- Note: Partitioning can be enabled later if needed
+-- CREATE TABLE audit_logs_y2024m01 PARTITION OF audit_logs
+--     FOR VALUES FROM ('2024-01-01') TO ('2024-02-01');
+
+-- Add comments
+COMMENT ON TABLE audit_logs IS 'Immutable audit log for all security and administrative events';
+COMMENT ON COLUMN audit_logs.event_type IS 'Dot-notation event type (e.g., user.login, role.assigned)';
+COMMENT ON COLUMN audit_logs.event_category IS 'High-level category for grouping events';
+COMMENT ON COLUMN audit_logs.actor_type IS 'Type of entity that performed the action';
+COMMENT ON COLUMN audit_logs.target_type IS 'Type of resource that was affected';
+COMMENT ON COLUMN audit_logs.metadata IS 'Additional structured data specific to the event';
+COMMENT ON COLUMN audit_logs.status IS 'Outcome of the event (success, failure, error)';
+
+-- Grant permissions
+GRANT SELECT ON audit_logs TO ciam;
+GRANT INSERT ON audit_logs TO ciam;
+-- Note: UPDATE and DELETE are intentionally not granted due to immutability

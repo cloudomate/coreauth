@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jellp - Login with CoreAuth</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 40px;
+      max-width: 400px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      color: #1a202c;
+    }
+    .subtitle {
+      color: #718096;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #4a5568;
+      font-size: 14px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+    button:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+    }
+    .divider {
+      text-align: center;
+      margin: 24px 0;
+      position: relative;
+    }
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #e2e8f0;
+    }
+    .divider span {
+      background: white;
+      padding: 0 12px;
+      color: #a0aec0;
+      font-size: 13px;
+      position: relative;
+    }
+    .sso-btn {
+      background: white;
+      border: 2px solid #e2e8f0;
+      color: #4a5568;
+      margin-top: 12px;
+    }
+    .sso-btn:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .error {
+      background: #fed7d7;
+      color: #c53030;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .success {
+      background: #c6f6d5;
+      color: #22543d;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .user-info {
+      background: #edf2f7;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .user-info h3 {
+      margin-bottom: 12px;
+      color: #2d3748;
+    }
+    .user-info p {
+      color: #4a5568;
+      margin: 6px 0;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Not Authenticated View -->
+    <div id="login-view">
+      <h1>Welcome to Jellp</h1>
+      <p class="subtitle">Sign in to continue</p>
+
+      <div id="error-message" class="error" style="display: none;"></div>
+
+      <!-- Email-first login -->
+      <form id="email-form">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="user@company.com"
+            required
+          />
+        </div>
+        <button type="submit">Continue</button>
+      </form>
+
+      <!-- Password form (shown after email) -->
+      <form id="password-form" style="display: none;">
+        <div class="form-group">
+          <label for="email-display">Email</label>
+          <input type="email" id="email-display" disabled />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+        <button type="submit">Sign In</button>
+        <button type="button" class="sso-btn" id="sso-btn">
+          Sign in with SSO
+        </button>
+      </form>
+    </div>
+
+    <!-- Authenticated View -->
+    <div id="dashboard-view" style="display: none;">
+      <h1>Dashboard</h1>
+      <p class="subtitle">You're logged in!</p>
+
+      <div class="user-info">
+        <h3>User Information</h3>
+        <p><strong>Email:</strong> <span id="user-email"></span></p>
+        <p><strong>Organization:</strong> <span id="user-org"></span></p>
+        <p><strong>Verified:</strong> <span id="user-verified"></span></p>
+      </div>
+
+      <button id="logout-btn" style="margin-top: 20px;">Logout</button>
+    </div>
+  </div>
+
+  <!-- Include CoreAuth SDK -->
+  <script src="../coreauth-js-sdk.js"></script>
+
+  <script>
+    // Initialize CoreAuth SDK
+    const auth = new CoreAuth({
+      domain: 'http://localhost:8000',
+      clientId: 'jellp-app',
+      redirectUri: window.location.origin + '/callback',
+    });
+
+    let userEmail = '';
+    let userOrg = '';
+
+    // Elements
+    const loginView = document.getElementById('login-view');
+    const dashboardView = document.getElementById('dashboard-view');
+    const emailForm = document.getElementById('email-form');
+    const passwordForm = document.getElementById('password-form');
+    const emailInput = document.getElementById('email');
+    const emailDisplay = document.getElementById('email-display');
+    const passwordInput = document.getElementById('password');
+    const ssoBtn = document.getElementById('sso-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const errorMessage = document.getElementById('error-message');
+
+    // Check authentication on load
+    checkAuth();
+
+    // Email form submit
+    emailForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      userEmail = emailInput.value;
+
+      // Auto-detect organization from email domain
+      const domain = userEmail.split('@')[1];
+
+      try {
+        // Call CoreAuth API to resolve organization
+        const response = await fetch('http://localhost:8000/api/auth/resolve-org', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userEmail, domain })
+        });
+
+        if (response.ok) {
+          const { organization_slug, has_sso } = await response.json();
+          userOrg = organization_slug;
+
+          // Show password/SSO form
+          emailDisplay.value = userEmail;
+          emailForm.style.display = 'none';
+          passwordForm.style.display = 'block';
+
+          // If organization has SSO, highlight that option
+          if (has_sso) {
+            showMessage('This organization uses SSO. Click "Sign in with SSO" below.', 'success');
+          }
+        } else {
+          // Organization not found - show password form anyway
+          emailDisplay.value = userEmail;
+          emailForm.style.display = 'none';
+          passwordForm.style.display = 'block';
+        }
+      } catch (err) {
+        console.error('Error resolving organization:', err);
+        // Fallback: show password form
+        emailDisplay.value = userEmail;
+        emailForm.style.display = 'none';
+        passwordForm.style.display = 'block';
+      }
+    });
+
+    // Password form submit
+    passwordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      try {
+        const result = await auth.loginWithCredentials(
+          userEmail,
+          passwordInput.value,
+          userOrg
+        );
+
+        if (result.requiresMFA) {
+          // Redirect to MFA enrollment
+          window.location.href = '/mfa-setup?token=' + result.enrollmentToken;
+        } else {
+          // Success - show dashboard
+          await showDashboard();
+        }
+      } catch (err) {
+        showMessage(err.message, 'error');
+      }
+    });
+
+    // SSO button click
+    ssoBtn.addEventListener('click', () => {
+      auth.loginWithSSO(userOrg);
+    });
+
+    // Logout button click
+    logoutBtn.addEventListener('click', async () => {
+      await auth.logout();
+      window.location.reload();
+    });
+
+    // Check if user is authenticated
+    async function checkAuth() {
+      if (auth.isAuthenticated()) {
+        try {
+          await showDashboard();
+        } catch (err) {
+          console.error('Auth check failed:', err);
+        }
+      }
+    }
+
+    // Show dashboard
+    async function showDashboard() {
+      const user = await auth.getUser();
+
+      if (user) {
+        document.getElementById('user-email').textContent = user.email;
+        document.getElementById('user-org').textContent = user.default_organization_id || 'N/A';
+        document.getElementById('user-verified').textContent = user.email_verified ? 'Yes' : 'No';
+
+        loginView.style.display = 'none';
+        dashboardView.style.display = 'block';
+      }
+    }
+
+    // Show error/success message
+    function showMessage(message, type) {
+      errorMessage.textContent = message;
+      errorMessage.className = type;
+      errorMessage.style.display = 'block';
+
+      setTimeout(() => {
+        errorMessage.style.display = 'none';
+      }, 5000);
+    }
+
+    // Handle OAuth callback (if redirected back)
+    if (window.location.search.includes('code=')) {
+      auth.handleCallback()
+        .then(async () => {
+          await showDashboard();
+        })
+        .catch(err => {
+          showMessage('Login failed: ' + err.message, 'error');
+          window.history.replaceState({}, document.title, '/');
+        });
+    }
+  </script>
+</body>
+</html>

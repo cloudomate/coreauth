@@ -1,0 +1,112 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: coreauth-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-coreauth}
+      POSTGRES_USER: ${POSTGRES_USER:-coreauth}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-coreauth_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-coreauth}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - coreauth-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: coreauth-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - coreauth-network
+
+  # Backend API (Rust)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: coreauth-backend
+    extra_hosts:
+      - "datacore.lan:192.168.4.102"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER:-coreauth}
+      POSTGRES_DB: ${POSTGRES_DB:-coreauth}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TOKEN_EXPIRY: ${JWT_ACCESS_TOKEN_EXPIRY:-3600}
+      JWT_REFRESH_TOKEN_EXPIRY: ${JWT_REFRESH_TOKEN_EXPIRY:-2592000}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-mailhog}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@coreauth.dev}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-CoreAuth}
+      MAILHOG_HOST: ${MAILHOG_HOST:-datacore.lan}
+      MAILHOG_PORT: ${MAILHOG_PORT:-1025}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMS_ENABLED: ${SMS_ENABLED:-false}
+      SMS_PROVIDER: ${SMS_PROVIDER:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+      HOST: ${BACKEND_HOST:-0.0.0.0}
+      PORT: ${BACKEND_PORT:-3000}
+      RUST_LOG: ${RUST_LOG:-info}
+      APP_URL: ${APP_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "${BACKEND_EXTERNAL_PORT:-8000}:${BACKEND_PORT:-3000}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - coreauth-network
+    restart: unless-stopped
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: coreauth-frontend
+    environment:
+      VITE_API_URL: ${VITE_API_URL}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+    networks:
+      - coreauth-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  coreauth-network:
+    driver: bridge

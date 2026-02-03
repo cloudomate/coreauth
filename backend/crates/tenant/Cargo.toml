@@ -1,0 +1,28 @@
+[package]
+name = "ciam-tenant"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# Workspace crates
+ciam-models = { path = "../models" }
+ciam-database = { path = "../database" }
+ciam-cache = { path = "../cache" }
+
+# Async runtime
+tokio.workspace = true
+
+# Web framework
+axum.workspace = true
+
+# Serialization
+serde.workspace = true
+
+# Error handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Utilities
+uuid.workspace = true

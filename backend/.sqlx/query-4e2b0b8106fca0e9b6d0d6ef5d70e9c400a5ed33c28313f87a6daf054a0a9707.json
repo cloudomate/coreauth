@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id,\n                name,\n                type as connection_type,\n                scope as \"scope: ConnectionScope\",\n                organization_id,\n                config,\n                is_enabled,\n                created_at,\n                updated_at\n            FROM connections\n            WHERE organization_id = $1\n              AND scope = 'organization'\n              AND type IN ('oidc', 'saml', 'oauth2')\n              AND is_enabled = true\n            ORDER BY created_at ASC\n            LIMIT 1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "connection_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "scope: ConnectionScope",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "config",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4e2b0b8106fca0e9b6d0d6ef5d70e9c400a5ed33c28313f87a6daf054a0a9707"
+}

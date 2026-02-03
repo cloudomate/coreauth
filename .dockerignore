@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Development
+.env
+.env.local
+.env.*.local
+
+# Dependencies (will be installed in container)
+node_modules/
+target/
+
+# Build outputs (will be generated in container)
+dist/
+build/

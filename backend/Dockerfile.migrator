@@ -1,0 +1,42 @@
+# Dockerfile for running database migrations
+FROM postgres:16-alpine
+
+WORKDIR /migrations
+
+# Copy migration files
+COPY migrations /migrations
+
+# Create migration runner script
+RUN echo '#!/bin/sh' > /run-migrations.sh && \
+    echo 'set -e' >> /run-migrations.sh && \
+    echo '' >> /run-migrations.sh && \
+    echo 'echo "Checking database..."' >> /run-migrations.sh && \
+    echo '' >> /run-migrations.sh && \
+    echo '# Extract database name from connection string' >> /run-migrations.sh && \
+    echo 'DB_NAME=$(echo "$DATABASE_URL" | sed -n "s/.*\/\([^?]*\).*/\1/p")' >> /run-migrations.sh && \
+    echo 'POSTGRES_URL=$(echo "$DATABASE_URL" | sed "s/\/${DB_NAME}/\/postgres/")' >> /run-migrations.sh && \
+    echo '' >> /run-migrations.sh && \
+    echo '# Check if this is a fresh database by looking for tables' >> /run-migrations.sh && \
+    echo 'TABLE_COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='"'"'public'"'"';" 2>/dev/null || echo "0")' >> /run-migrations.sh && \
+    echo '' >> /run-migrations.sh && \
+    echo 'if [ "$TABLE_COUNT" -gt "0" ]; then' >> /run-migrations.sh && \
+    echo '  echo "Database has $TABLE_COUNT tables - skipping migration (already initialized)"' >> /run-migrations.sh && \
+    echo '  echo "To re-run migrations, delete the volume and restart"' >> /run-migrations.sh && \
+    echo '  exit 0' >> /run-migrations.sh && \
+    echo 'fi' >> /run-migrations.sh && \
+    echo '' >> /run-migrations.sh && \
+    echo 'echo "Fresh database detected - running migrations..."' >> /run-migrations.sh && \
+    echo '' >> /run-migrations.sh && \
+    echo '# Run migrations in sorted order' >> /run-migrations.sh && \
+    echo 'ls -1 /migrations/*.sql | sort | while read file; do' >> /run-migrations.sh && \
+    echo '  if [ -f "$file" ]; then' >> /run-migrations.sh && \
+    echo '    echo "Applying migration: $(basename $file)"' >> /run-migrations.sh && \
+    echo '    psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f "$file" || exit 1' >> /run-migrations.sh && \
+    echo '  fi' >> /run-migrations.sh && \
+    echo 'done' >> /run-migrations.sh && \
+    echo '' >> /run-migrations.sh && \
+    echo 'echo "All migrations completed successfully!"' >> /run-migrations.sh && \
+    chmod +x /run-migrations.sh
+
+# Default command runs migrations
+CMD ["/run-migrations.sh"]

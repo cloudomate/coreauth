@@ -1,0 +1,183 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO audit_logs (\n                tenant_id, event_type, event_category, event_action,\n                actor_type, actor_id, actor_name, actor_ip_address, actor_user_agent,\n                target_type, target_id, target_name,\n                description, metadata,\n                status, error_message,\n                request_id, session_id\n            )\n            VALUES ($1, $2, $3::audit_event_category, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)\n            RETURNING\n                id, tenant_id,\n                event_type, event_category as \"event_category: _\", event_action,\n                actor_type, actor_id, actor_name, actor_ip_address::text as actor_ip_address, actor_user_agent,\n                target_type, target_id, target_name,\n                description, metadata,\n                status, error_message,\n                request_id, session_id,\n                created_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "tenant_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "event_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "event_category: _",
+        "type_info": {
+          "Custom": {
+            "name": "audit_event_category",
+            "kind": {
+              "Enum": [
+                "authentication",
+                "authorization",
+                "user_management",
+                "tenant_management",
+                "security",
+                "admin",
+                "system"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "event_action",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "actor_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "actor_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "actor_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "actor_ip_address",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "actor_user_agent",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "target_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "target_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "target_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 13,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "metadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 16,
+        "name": "error_message",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 17,
+        "name": "request_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 18,
+        "name": "session_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 19,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        {
+          "Custom": {
+            "name": "audit_event_category",
+            "kind": {
+              "Enum": [
+                "authentication",
+                "authorization",
+                "user_management",
+                "tenant_management",
+                "security",
+                "admin",
+                "system"
+              ]
+            }
+          }
+        },
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Inet",
+        "Text",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Jsonb",
+        "Varchar",
+        "Text",
+        "Varchar",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      null,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "381dc95243f9eb3747e519270972f17a8acf5e139a5cf4d82dfe5202ebf899e7"
+}

@@ -1,0 +1,44 @@
+[package]
+name = "ciam-authz"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# Workspace crates
+ciam-models = { path = "../models" }
+ciam-database = { path = "../database" }
+ciam-cache = { path = "../cache" }
+
+# Async runtime
+tokio.workspace = true
+
+# Database
+sqlx.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Authentication & Crypto
+argon2.workspace = true
+rand.workspace = true
+
+# Validation
+validator.workspace = true
+
+# Error handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Utilities
+uuid.workspace = true
+chrono.workspace = true
+
+# Logging
+tracing.workspace = true
+
+# Cryptography
+sha2 = "0.10"
+hex.workspace = true

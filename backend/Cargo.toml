@@ -1,0 +1,84 @@
+[workspace]
+members = [
+    "crates/api",
+    "crates/auth",
+    "crates/authz",
+    "crates/database",
+    "crates/models",
+    "crates/tenant",
+    "crates/cache",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["CIAM Team"]
+license = "Apache-2.0"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.41", features = ["full"] }
+tokio-util = "0.7"
+
+# Web framework
+axum = { version = "0.7", features = ["macros", "ws"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace", "cors", "compression-gzip"] }
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "uuid", "chrono", "json", "ipnetwork"] }
+sea-query = "0.31"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Authentication & Crypto
+jsonwebtoken = "9.3"
+argon2 = "0.5"
+bcrypt = "0.15"
+rand = "0.8"
+uuid = { version = "1.11", features = ["v4", "serde"] }
+openidconnect = "3.5"
+totp-lite = "2.0"
+base32 = "0.5"
+qrcode = "0.14"
+image = "0.25"
+urlencoding = "2.1"
+hex = "0.4"
+
+# Redis
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
+
+# Validation
+validator = { version = "0.18", features = ["derive"] }
+
+# Configuration
+config = "0.14"
+dotenvy = "0.15"
+
+# Logging & Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Network types
+ipnetwork = "0.20"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json"] }
+
+# Utilities
+regex = "1.10"
+lazy_static = "1.4"
+
+# JavaScript runtime (Deno core for secure sandboxing)
+deno_core = "0.259"
+serde_v8 = "0.167"

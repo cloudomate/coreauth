@@ -1,0 +1,23 @@
+[package]
+name = "ciam-models"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# Database
+sqlx.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Validation
+validator.workspace = true
+
+# Utilities
+uuid.workspace = true
+chrono.workspace = true
+regex.workspace = true
+lazy_static.workspace = true
