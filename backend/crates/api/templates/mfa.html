@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Your Identity - {{ org_name }}{% endblock %}
+
+{% block primary_color %}{{ branding.primary_color }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="logo">
+        {% if branding.has_logo() %}
+        <img src="{{ branding.logo_url }}" alt="{{ org_name }}">
+        {% else %}
+        <span class="logo-text">{{ org_name }}</span>
+        {% endif %}
+    </div>
+
+    <h1>Two-Factor Authentication</h1>
+    <p class="subtitle">Enter the code from your authenticator app</p>
+
+    {% if has_error %}
+    <div class="error-message">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/mfa/verify">
+        <input type="hidden" name="request_id" value="{{ request_id }}">
+        <input type="hidden" name="challenge_token" value="{{ challenge_token }}">
+        <input type="hidden" name="method" value="totp">
+
+        <div class="form-group">
+            <label for="code">Verification Code</label>
+            <input
+                type="text"
+                id="code"
+                name="code"
+                class="mfa-code-input"
+                placeholder="000000"
+                maxlength="6"
+                pattern="[0-9]{6}"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                required
+                autofocus
+            >
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Verify
+        </button>
+    </form>
+
+    <div class="backup-code-link">
+        <a href="/mfa/backup?request_id={{ request_id }}&challenge_token={{ challenge_token }}" class="link">
+            Use a backup code instead
+        </a>
+    </div>
+
+    <div class="footer-links">
+        <a href="/login?request_id={{ request_id }}">Use a different account</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-submit when 6 digits are entered
+    const codeInput = document.getElementById('code');
+    codeInput.addEventListener('input', function(e) {
+        // Only allow numbers
+        this.value = this.value.replace(/[^0-9]/g, '');
+
+        // Auto-submit when 6 digits entered
+        if (this.value.length === 6) {
+            this.form.submit();
+        }
+    });
+
+    // Focus the input on page load
+    codeInput.focus();
+</script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Logged Out{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="logo">
+        <span class="logo-text">CoreAuth</span>
+    </div>
+
+    <h1>You've been logged out</h1>
+    <p class="subtitle">Your session has ended successfully.</p>
+
+    <div style="text-align: center; margin-top: 2rem;">
+        <svg style="width: 64px; height: 64px; color: var(--success-color); margin-bottom: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+    </div>
+
+    <p style="text-align: center; color: var(--text-secondary); font-size: 0.875rem;">
+        You can close this window or sign in again.
+    </p>
+</div>
+{% endblock %}

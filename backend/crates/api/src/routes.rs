@@ -3,7 +3,7 @@ use crate::middleware;
 use crate::AppState;
 use axum::{
     middleware::from_fn_with_state,
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
     Router,
 };
 use std::sync::Arc;
@@ -12,12 +12,33 @@ pub fn create_router(state: Arc<AppState>) -> Router {
     Router::new()
         // Health check
         .route("/health", get(handlers::health::health_check))
+        // OAuth2/OIDC Authorization Server - Public endpoints
+        .route("/.well-known/openid-configuration", get(handlers::oauth2::openid_configuration))
+        .route("/.well-known/jwks.json", get(handlers::oauth2::jwks))
+        .route("/authorize", get(handlers::oauth2::authorize))
+        .route("/oauth/token", post(handlers::oauth2::token))
+        .route("/userinfo", get(handlers::oauth2::userinfo).post(handlers::oauth2::userinfo))
+        .route("/oauth/revoke", post(handlers::oauth2::revoke))
+        .route("/oauth/introspect", post(handlers::oauth2::introspect))
+        .route("/logout", get(handlers::oauth2::logout))
+        // Universal Login - Public endpoints
+        .route("/login", get(handlers::universal_login::login_page).post(handlers::universal_login::login_submit))
+        .route("/signup", get(handlers::universal_login::signup_page).post(handlers::universal_login::signup_submit))
+        .route("/mfa", get(handlers::universal_login::mfa_page))
+        .route("/mfa/verify", post(handlers::universal_login::mfa_verify))
+        .route("/consent", get(handlers::universal_login::consent_page).post(handlers::universal_login::consent_submit))
+        .route("/logged-out", get(handlers::universal_login::logged_out_page))
+        // Social Login - Public endpoints
+        .route("/login/social/:connection_id", get(handlers::social_login::social_login))
+        .route("/login/social/callback", get(handlers::social_login::social_callback))
         // Test endpoints (development only)
         .route("/api/test/email", post(handlers::test::test_email))
         .route("/api/test/sms", post(handlers::test::test_sms))
         .route("/api/test/connectivity", get(handlers::test::test_connectivity))
         // Tenant onboarding (public)
         .route("/api/tenants", post(handlers::tenant::create_tenant))
+        // Organization lookup by slug (public - for login page)
+        .route("/api/organizations/by-slug/:slug", get(handlers::tenant::get_organization_by_slug))
         // Auth routes
         .route(
             "/api/auth/register",
@@ -115,6 +136,18 @@ pub fn create_router(state: Arc<AppState>) -> Router {
         .route(
             "/api/oidc/providers",
             post(handlers::oidc::create_provider)
+                .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
+        )
+        // OIDC routes - Protected: Update provider (requires tenant admin)
+        .route(
+            "/api/oidc/providers/:id",
+            patch(handlers::oidc::update_provider)
+                .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
+        )
+        // OIDC routes - Protected: Delete provider (requires tenant admin)
+        .route(
+            "/api/oidc/providers/:id",
+            delete(handlers::oidc::delete_provider)
                 .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
         )
         // MFA enrollment with enrollment token (unauthenticated)
@@ -327,6 +360,80 @@ pub fn create_router(state: Arc<AppState>) -> Router {
         .route(
             "/api/organizations/:org_id/actions/executions",
             get(handlers::action::get_organization_executions)
+                .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
+        )
+        // Webhooks Management - Protected (require tenant admin)
+        .route(
+            "/api/organizations/:org_id/webhooks",
+            get(handlers::webhook::list_webhooks)
+                .post(handlers::webhook::create_webhook)
+                .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
+        )
+        .route(
+            "/api/organizations/:org_id/webhooks/:webhook_id",
+            get(handlers::webhook::get_webhook)
+                .put(handlers::webhook::update_webhook)
+                .delete(handlers::webhook::delete_webhook)
+                .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
+        )
+        .route(
+            "/api/organizations/:org_id/webhooks/:webhook_id/rotate-secret",
+            post(handlers::webhook::rotate_secret)
+                .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
+        )
+        .route(
+            "/api/organizations/:org_id/webhooks/:webhook_id/test",
+            post(handlers::webhook::test_webhook)
+                .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
+        )
+        .route(
+            "/api/organizations/:org_id/webhooks/:webhook_id/deliveries",
+            get(handlers::webhook::list_deliveries)
+                .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
+        )
+        .route(
+            "/api/organizations/:org_id/webhooks/:webhook_id/deliveries/:delivery_id",
+            get(handlers::webhook::get_delivery)
+                .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
+        )
+        .route(
+            "/api/organizations/:org_id/webhooks/:webhook_id/deliveries/:delivery_id/retry",
+            post(handlers::webhook::retry_delivery)
+                .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
+        )
+        // Webhook Event Types - Public (anyone can see available events)
+        .route("/api/webhooks/event-types", get(handlers::webhook::list_event_types))
+        // SCIM 2.0 Provisioning - Public endpoints (authenticated via bearer token)
+        .route("/scim/v2/ServiceProviderConfig", get(handlers::scim::get_service_provider_config))
+        .route("/scim/v2/ResourceTypes", get(handlers::scim::get_resource_types))
+        .route("/scim/v2/Schemas", get(handlers::scim::get_schemas))
+        // SCIM Users
+        .route("/scim/v2/Users", get(handlers::scim::list_users).post(handlers::scim::create_user))
+        .route(
+            "/scim/v2/Users/:user_id",
+            get(handlers::scim::get_user)
+                .put(handlers::scim::replace_user)
+                .patch(handlers::scim::patch_user)
+                .delete(handlers::scim::delete_user)
+        )
+        // SCIM Groups
+        .route("/scim/v2/Groups", get(handlers::scim::list_groups).post(handlers::scim::create_group))
+        .route(
+            "/scim/v2/Groups/:group_id",
+            get(handlers::scim::get_group)
+                .patch(handlers::scim::patch_group)
+                .delete(handlers::scim::delete_group)
+        )
+        // SCIM Token Management - Protected (require tenant admin)
+        .route(
+            "/api/organizations/:org_id/scim/tokens",
+            get(handlers::scim::list_scim_tokens)
+                .post(handlers::scim::create_scim_token)
+                .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
+        )
+        .route(
+            "/api/organizations/:org_id/scim/tokens/:token_id",
+            delete(handlers::scim::revoke_scim_token)
                 .route_layer(from_fn_with_state(state.clone(), middleware::require_tenant_admin))
         )
         .with_state(state)

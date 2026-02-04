@@ -289,6 +289,46 @@ pub async fn create_tenant(
     }))
 }
 
+/// Public response for organization lookup
+#[derive(Debug, Serialize)]
+pub struct PublicOrganizationResponse {
+    pub id: Uuid,
+    pub name: String,
+    pub slug: String,
+}
+
+/// Get organization by slug (Public - for login page)
+/// GET /api/organizations/by-slug/:slug
+pub async fn get_organization_by_slug(
+    State(state): State<Arc<AppState>>,
+    Path(slug): Path<String>,
+) -> Result<Json<PublicOrganizationResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let result: Option<(Uuid, String, String)> = sqlx::query_as(
+        r#"
+        SELECT id, name, slug FROM organizations
+        WHERE slug = $1 AND parent_organization_id IS NULL
+        "#,
+    )
+    .bind(&slug)
+    .fetch_optional(state.auth_service.db.pool())
+    .await
+    .map_err(|e| {
+        tracing::error!("Database error fetching organization by slug: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new("database_error", "Failed to fetch organization")),
+        )
+    })?;
+
+    match result {
+        Some((id, name, slug)) => Ok(Json(PublicOrganizationResponse { id, name, slug })),
+        None => Err((
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse::new("not_found", "Organization not found")),
+        )),
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct TenantUserResponse {
     pub id: Uuid,

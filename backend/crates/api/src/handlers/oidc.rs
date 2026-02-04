@@ -189,6 +189,7 @@ pub struct OidcProviderInfo {
     pub id: Uuid,
     pub name: String,
     pub provider_type: String,
+    pub is_active: bool,
 }
 
 pub async fn list_providers(
@@ -203,6 +204,7 @@ pub async fn list_providers(
                     id: p.id,
                     name: p.name,
                     provider_type: p.provider_type,
+                    is_active: p.is_active,
                 })
                 .collect();
             Ok(Json(provider_list))
@@ -270,12 +272,103 @@ pub async fn create_provider(
             id: provider.id,
             name: provider.name,
             provider_type: provider.provider_type,
+            is_active: provider.is_active,
         })),
         Err(e) => {
             tracing::error!("Create provider error: {}", e);
             Err((
                 StatusCode::BAD_REQUEST,
                 Json(ErrorResponse::new("create_provider_failed", &e.to_string())),
+            ))
+        }
+    }
+}
+
+/// Update OIDC provider
+/// PATCH /api/oidc/providers/:id
+#[derive(Debug, Deserialize)]
+pub struct UpdateProviderRequest {
+    pub is_active: Option<bool>,
+    pub name: Option<String>,
+    pub client_id: Option<String>,
+    pub client_secret: Option<String>,
+}
+
+pub async fn update_provider(
+    State(state): State<Arc<AppState>>,
+    Path(provider_id): Path<Uuid>,
+    Json(request): Json<UpdateProviderRequest>,
+) -> Result<Json<OidcProviderInfo>, (StatusCode, Json<ErrorResponse>)> {
+    use sqlx::Row;
+
+    // For now, only support toggling is_active
+    if let Some(is_active) = request.is_active {
+        let result = sqlx::query(
+            "UPDATE oidc_providers SET is_active = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, provider_type, is_active"
+        )
+        .bind(is_active)
+        .bind(provider_id)
+        .fetch_optional(state.auth_service.db.pool())
+        .await;
+
+        match result {
+            Ok(Some(row)) => {
+                return Ok(Json(OidcProviderInfo {
+                    id: row.get("id"),
+                    name: row.get("name"),
+                    provider_type: row.get("provider_type"),
+                    is_active: row.get("is_active"),
+                }));
+            }
+            Ok(None) => {
+                return Err((
+                    StatusCode::NOT_FOUND,
+                    Json(ErrorResponse::new("provider_not_found", "Provider not found")),
+                ));
+            }
+            Err(e) => {
+                tracing::error!("Update provider error: {}", e);
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse::new("update_failed", &e.to_string())),
+                ));
+            }
+        }
+    }
+
+    Err((
+        StatusCode::BAD_REQUEST,
+        Json(ErrorResponse::new("no_updates", "No valid updates provided")),
+    ))
+}
+
+/// Delete OIDC provider
+/// DELETE /api/oidc/providers/:id
+pub async fn delete_provider(
+    State(state): State<Arc<AppState>>,
+    Path(provider_id): Path<Uuid>,
+) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
+    let result = sqlx::query("DELETE FROM oidc_providers WHERE id = $1")
+        .bind(provider_id)
+        .execute(state.auth_service.db.pool())
+        .await;
+
+    match result {
+        Ok(result) => {
+            if result.rows_affected() > 0 {
+                Ok(StatusCode::NO_CONTENT)
+            } else {
+                Err((
+                    StatusCode::NOT_FOUND,
+                    Json(ErrorResponse::new("provider_not_found", "Provider not found")),
+                ))
+            }
+        }
+        Err(e) => {
+            tracing::error!("Delete provider error: {}", e);
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse::new("delete_failed", &e.to_string())),
             ))
         }
     }

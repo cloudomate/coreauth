@@ -150,10 +150,109 @@ impl Default for ClaimMappings {
     }
 }
 
+/// Social provider connection configuration (Google, GitHub, Microsoft, etc.)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SocialConnectionConfig {
+    pub provider: SocialProvider,
+    pub client_id: String,
+    pub client_secret: String,
+    pub scopes: Vec<String>,
+}
+
+/// Supported social providers
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum SocialProvider {
+    Google,
+    Github,
+    Microsoft,
+    Facebook,
+    Apple,
+    LinkedIn,
+}
+
+impl SocialProvider {
+    pub fn authorization_url(&self) -> &'static str {
+        match self {
+            SocialProvider::Google => "https://accounts.google.com/o/oauth2/v2/auth",
+            SocialProvider::Github => "https://github.com/login/oauth/authorize",
+            SocialProvider::Microsoft => "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+            SocialProvider::Facebook => "https://www.facebook.com/v18.0/dialog/oauth",
+            SocialProvider::Apple => "https://appleid.apple.com/auth/authorize",
+            SocialProvider::LinkedIn => "https://www.linkedin.com/oauth/v2/authorization",
+        }
+    }
+
+    pub fn token_url(&self) -> &'static str {
+        match self {
+            SocialProvider::Google => "https://oauth2.googleapis.com/token",
+            SocialProvider::Github => "https://github.com/login/oauth/access_token",
+            SocialProvider::Microsoft => "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            SocialProvider::Facebook => "https://graph.facebook.com/v18.0/oauth/access_token",
+            SocialProvider::Apple => "https://appleid.apple.com/auth/token",
+            SocialProvider::LinkedIn => "https://www.linkedin.com/oauth/v2/accessToken",
+        }
+    }
+
+    pub fn userinfo_url(&self) -> &'static str {
+        match self {
+            SocialProvider::Google => "https://www.googleapis.com/oauth2/v3/userinfo",
+            SocialProvider::Github => "https://api.github.com/user",
+            SocialProvider::Microsoft => "https://graph.microsoft.com/v1.0/me",
+            SocialProvider::Facebook => "https://graph.facebook.com/me?fields=id,name,email,picture",
+            SocialProvider::Apple => "", // Apple uses ID token claims
+            SocialProvider::LinkedIn => "https://api.linkedin.com/v2/userinfo",
+        }
+    }
+
+    pub fn default_scopes(&self) -> Vec<&'static str> {
+        match self {
+            SocialProvider::Google => vec!["openid", "email", "profile"],
+            SocialProvider::Github => vec!["user:email", "read:user"],
+            SocialProvider::Microsoft => vec!["openid", "email", "profile", "User.Read"],
+            SocialProvider::Facebook => vec!["email", "public_profile"],
+            SocialProvider::Apple => vec!["name", "email"],
+            SocialProvider::LinkedIn => vec!["openid", "email", "profile"],
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            SocialProvider::Google => "google",
+            SocialProvider::Github => "github",
+            SocialProvider::Microsoft => "microsoft",
+            SocialProvider::Facebook => "facebook",
+            SocialProvider::Apple => "apple",
+            SocialProvider::LinkedIn => "linkedin",
+        }
+    }
+}
+
+impl std::fmt::Display for SocialProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+/// User info returned from social providers (normalized)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SocialUserInfo {
+    pub provider: String,
+    pub provider_user_id: String,
+    pub email: Option<String>,
+    pub email_verified: Option<bool>,
+    pub name: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub picture: Option<String>,
+    pub raw: serde_json::Value,
+}
+
 /// Connection types
 pub mod types {
     pub const DATABASE: &str = "database";
     pub const OIDC: &str = "oidc";
     pub const SAML: &str = "saml";
     pub const OAUTH2: &str = "oauth2";
+    pub const SOCIAL: &str = "social";
 }

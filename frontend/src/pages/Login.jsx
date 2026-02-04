@@ -109,7 +109,10 @@ export default function Login() {
                 />
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                The slug you chose during tenant signup
+                The slug you chose during tenant signup.{' '}
+                <Link to={`/login/${formData.organizationSlug || 'your-org'}`} className="text-primary-600 hover:text-primary-700">
+                  Use SSO login instead
+                </Link>
               </p>
             </div>
 

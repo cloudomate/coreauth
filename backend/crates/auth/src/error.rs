@@ -10,6 +10,9 @@ pub enum AuthError {
     #[error("User not found")]
     UserNotFound,
 
+    #[error("Database error: {0}")]
+    Database(String),
+
     #[error("User account is inactive")]
     UserInactive,
 
@@ -74,6 +77,9 @@ pub enum AuthError {
 
     #[error("Internal error: {0}")]
     Internal(String),
+
+    #[error("Configuration error: {0}")]
+    ConfigurationError(String),
 }
 
 impl From<argon2::password_hash::Error> for AuthError {

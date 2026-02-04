@@ -282,6 +282,30 @@ export const connectionApi = {
     api.post(`/api/organizations/${orgId}/connections/${connId}/test`),
 };
 
+// Billing API
+export const billingApi = {
+  getSubscription: () =>
+    api.get('/api/billing/subscription'),
+
+  getUsage: () =>
+    api.get('/api/billing/usage'),
+
+  getInvoices: (params?: { limit?: number; offset?: number }) =>
+    api.get('/api/billing/invoices', { params }),
+
+  getPlans: () =>
+    api.get('/api/billing/plans'),
+
+  createCheckout: (planId: string, billingCycle: 'monthly' | 'yearly' = 'monthly') =>
+    api.post<{ checkout_url: string }>('/api/billing/checkout', { plan_id: planId, billing_cycle: billingCycle }),
+
+  createPortalSession: () =>
+    api.post<{ portal_url: string }>('/api/billing/portal'),
+
+  changePlan: (planId: string) =>
+    api.post('/api/billing/change-plan', { plan_id: planId }),
+};
+
 // Organizations API
 export const organizationApi = {
   list: (params?: { limit?: number; offset?: number }) =>

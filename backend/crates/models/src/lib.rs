@@ -16,6 +16,18 @@ pub mod connection;
 pub mod application;
 pub mod action;
 
+// Billing module
+pub mod billing;
+
+// OAuth2/OIDC Authorization Server module
+pub mod oauth2;
+
+// Webhooks module
+pub mod webhook;
+
+// SCIM provisioning module
+pub mod scim;
+
 // Re-export commonly used types
 pub use organization::{
     Organization, CreateOrganization, UpdateOrganization,
@@ -32,7 +44,11 @@ pub use oidc_provider::{OidcProvider, NewOidcProvider, ClaimMappings, OAuthState
 pub use mfa::{MfaMethod, MfaMethodType};
 pub use audit::{AuditLog, CreateAuditLog, AuditEventCategory, AuditStatus, AuditLogBuilder, AuditLogQuery};
 pub use organization_member::{OrganizationMember, AddOrganizationMember, UpdateMemberRole, OrganizationMemberWithUser};
-pub use connection::{Connection, CreateConnection, UpdateConnection, ConnectionScope, OidcConnectionConfig, SamlConnectionConfig, DatabaseConnectionConfig};
+pub use connection::{
+    Connection, CreateConnection, UpdateConnection, ConnectionScope,
+    OidcConnectionConfig, SamlConnectionConfig, DatabaseConnectionConfig,
+    SocialConnectionConfig, SocialProvider, SocialUserInfo,
+};
 pub use application::{
     Application, ApplicationWithSecret, CreateApplication, UpdateApplication,
     ApplicationType,
@@ -40,4 +56,31 @@ pub use application::{
 pub use action::{
     Action, CreateAction, UpdateAction, ActionTrigger,
     ActionExecution, ExecutionStatus, ActionContext, ActionResult,
+};
+pub use billing::{
+    Plan, PlanFeatures, Subscription, SubscriptionWithPlan, SubscriptionStatus,
+    BillingCycle, CreateSubscription, UpdateSubscription, UsageRecord, ActiveUser,
+    UsageSummary, PlanLimits, Invoice, InvoiceStatus, PaymentMethod, BillingEvent,
+    CreateCheckoutRequest, CheckoutResponse, BillingPortalResponse, BillingOverview,
+    ChangePlanRequest,
+};
+pub use oauth2::{
+    AuthorizationCode, CreateAuthorizationCode, RefreshToken, CreateRefreshToken,
+    AccessTokenRecord, OAuthConsent, LoginSession, CreateLoginSession,
+    AuthorizationRequest, CreateAuthorizationRequest, SigningKey,
+    OidcDiscovery, Jwks, Jwk, TokenRequest, TokenResponse, TokenError,
+    UserInfoResponse, AuthorizeRequest, IntrospectionRequest, IntrospectionResponse,
+    RevocationRequest,
+};
+pub use webhook::{
+    Webhook, CreateWebhook, UpdateWebhook, WebhookResponse, WebhookWithSecretResponse,
+    WebhookDelivery, DeliveryStatus, WebhookEvent, WebhookEventType, WebhookPayload,
+    RetryPolicy, TestWebhookRequest, TestWebhookResponse, DeliverySummary, DeliveryQuery,
+};
+pub use scim::{
+    ScimUser, ScimGroup, ScimName, ScimEmail, ScimPhoneNumber, ScimMember, ScimGroupRef,
+    ScimMeta, ScimListResponse, ScimError, ScimPatchRequest, ScimPatchOp,
+    ServiceProviderConfig, ResourceType, ScimToken, CreateScimToken, ScimTokenResponse,
+    ScimGroupRecord, ScimGroupMember, ScimConfiguration, ScimProvisioningLog,
+    ScimListQuery, ScimFilter, ScimFilterOp, CreateScimUser, CreateScimGroup,
 };

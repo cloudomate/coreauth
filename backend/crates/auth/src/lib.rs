@@ -15,6 +15,8 @@ pub mod connection_service;
 pub mod application_service;
 pub mod action_service;
 pub mod action_executor;
+pub mod billing_service;
+pub mod oauth2_service;
 pub mod error;
 
 pub use password::PasswordHasher;
@@ -33,4 +35,6 @@ pub use connection_service::{ConnectionService, AuthMethod};
 pub use application_service::ApplicationService;
 pub use action_service::ActionService;
 pub use action_executor::ActionExecutor;
+pub use billing_service::BillingService;
+pub use oauth2_service::OAuth2Service;
 pub use error::{AuthError, Result};

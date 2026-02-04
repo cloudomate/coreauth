@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="logo">
+        <span class="logo-text">CoreAuth</span>
+    </div>
+
+    <h1 style="color: var(--error-color);">
+        {% if error_code == "access_denied" %}
+        Access Denied
+        {% else if error_code == "invalid_request" %}
+        Invalid Request
+        {% else if error_code == "server_error" %}
+        Server Error
+        {% else if error_code == "temporarily_unavailable" %}
+        Temporarily Unavailable
+        {% else %}
+        Something went wrong
+        {% endif %}
+    </h1>
+
+    <p class="subtitle">{{ error_description }}</p>
+
+    {% if has_return_url %}
+    <a href="{{ return_url }}" class="btn btn-primary" style="margin-top: 1.5rem;">
+        Return to Application
+    </a>
+    {% endif %}
+
+    <div class="footer-links">
+        <p style="margin-top: 1.5rem;">
+            If this problem persists, please contact support.
+        </p>
+    </div>
+</div>
+{% endblock %}
