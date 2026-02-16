@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Your Email - {{ org_name }}{% endblock %}
+
+{% block primary_color %}{{ branding.primary_color }}{% endblock %}
+{% block primary_hover %}{{ branding.primary_color }}{% endblock %}
+{% block background_color %}{{ branding.background_color }}{% endblock %}
+
+{% block custom_css_block %}
+{% if branding.has_custom_css() %}<style>{{ branding.custom_css }}</style>{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="logo">
+        {% if branding.has_logo() %}
+        <img src="{{ branding.logo_url }}" alt="{{ org_name }}">
+        {% else %}
+        <span class="logo-text">{{ org_name }}</span>
+        {% endif %}
+    </div>
+
+    <div style="text-align: center; margin: 24px 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+        </svg>
+    </div>
+
+    <h1>Check your email</h1>
+    <p class="subtitle">We sent a verification link to <strong>{{ email }}</strong></p>
+
+    <p style="color: var(--text-secondary); font-size: 14px; margin: 16px 0; line-height: 1.6;">
+        Click the link in the email to verify your address and complete your sign up.
+        The link expires in 24 hours.
+    </p>
+
+    <div class="footer-links" style="margin-top: 24px;">
+        <a href="/login?request_id={{ request_id }}">Back to sign in</a>
+    </div>
+</div>
+{% endblock %}

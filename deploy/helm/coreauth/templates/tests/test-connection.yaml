@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "coreauth.fullname" . }}-test-connection
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "coreauth.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl
+      image: curlimages/curl:latest
+      command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Testing CoreAuth API health endpoint..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://{{ include "coreauth.core.fullname" . }}:{{ .Values.core.service.port }}/health)
+          if [ "$STATUS" = "200" ]; then
+            echo "Health check passed (HTTP 200)"
+            exit 0
+          else
+            echo "Health check failed (HTTP $STATUS)"
+            exit 1
+          fi

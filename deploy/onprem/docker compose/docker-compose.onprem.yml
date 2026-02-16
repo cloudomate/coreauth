@@ -1,0 +1,89 @@
+# CoreAuth On-Prem — Headless API Only
+# No bundled database. Customer provides PostgreSQL + Redis.
+#
+# Usage:
+#   docker compose -f docker-compose.onprem.yml up -d
+#
+# Add dashboard:
+#   docker compose -f docker-compose.onprem.yml -f docker-compose.dashboard.yml up -d
+
+services:
+  backend:
+    build:
+      context: ../../coreauth-core
+      dockerfile: Dockerfile
+    container_name: coreauth-core
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB:-coreauth}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TOKEN_EXPIRY: ${JWT_ACCESS_TOKEN_EXPIRY:-3600}
+      JWT_REFRESH_TOKEN_EXPIRY: ${JWT_REFRESH_TOKEN_EXPIRY:-2592000}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@coreauth.local}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-CoreAuth}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMS_ENABLED: ${SMS_ENABLED:-false}
+      SMS_PROVIDER: ${SMS_PROVIDER:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+      HOST: 0.0.0.0
+      PORT: ${BACKEND_PORT:-3000}
+      RUST_LOG: ${RUST_LOG:-info}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-false}
+    ports:
+      - "${BACKEND_PORT:-3000}:${BACKEND_PORT:-3000}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${BACKEND_PORT:-3000}/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - coreauth-network
+    restart: unless-stopped
+
+  bootstrap:
+    image: curlimages/curl:latest
+    container_name: coreauth-bootstrap
+    user: "0"
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      BACKEND_URL: http://backend:${BACKEND_PORT:-3000}
+      TENANT_NAME: ${TENANT_NAME}
+      TENANT_SLUG: ${TENANT_SLUG}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_FULL_NAME: ${ADMIN_FULL_NAME:-Admin User}
+      APP_NAME: ${APP_NAME}
+      APP_SLUG: ${APP_SLUG:-my-app}
+      APP_TYPE: ${APP_TYPE:-webapp}
+      APP_CALLBACK_URLS: ${APP_CALLBACK_URLS:-http://localhost:3000/callback}
+    volumes:
+      - coreauth_bootstrap:/data
+      - ./bootstrap.sh:/bootstrap.sh:ro
+    entrypoint: ["/bin/sh", "/bootstrap.sh"]
+    networks:
+      - coreauth-network
+    restart: "no"
+
+volumes:
+  coreauth_bootstrap:
+    driver: local
+
+networks:
+  coreauth-network:
+    driver: bridge

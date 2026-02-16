@@ -1,0 +1,78 @@
+# CoreAuth Proxy — Example Configuration
+#
+# Copy this file and adjust for your application.
+# See samples/corerun-auth/proxy.yaml for a working example.
+
+server:
+  listen: "0.0.0.0:4000"
+  upstream: "http://localhost:3001"          # your app
+
+coreauth:
+  url: "http://localhost:8000"               # CoreAuth backend
+  client_id: "your_client_id"
+  client_secret: "your_client_secret"
+  callback_url: "http://localhost:4000/auth/callback"
+
+session:
+  secret: "change-this-to-a-32-byte-random-hex-string-in-production"
+  cookie_name: "coreauth_session"
+  cookie_domain: ""
+  max_age_seconds: 86400
+  secure: false                              # true in production (HTTPS)
+
+fga:
+  store_name: "my-app"
+
+# Route rules — evaluated top-to-bottom, first match wins
+routes:
+  # Public routes — no auth
+  - match: { path: "/public/**" }
+    auth: none
+
+  - match: { path: "/health" }
+    auth: none
+
+  - match: { path: "/favicon.ico" }
+    auth: none
+
+  # API routes — auth required, return 401 (not redirect)
+  - match: { path: "/api/projects/:id", methods: ["GET"] }
+    auth: required
+    on_unauthenticated: status401
+    fga:
+      relation: "viewer"
+      object_type: "project"
+      object_id: "path:id"
+
+  - match: { path: "/api/projects/:id", methods: ["PUT", "PATCH"] }
+    auth: required
+    on_unauthenticated: status401
+    fga:
+      relation: "editor"
+      object_type: "project"
+      object_id: "path:id"
+
+  - match: { path: "/api/projects/:id", methods: ["DELETE"] }
+    auth: required
+    on_unauthenticated: status401
+    fga:
+      relation: "owner"
+      object_type: "project"
+      object_id: "path:id"
+
+  - match: { path: "/api/**" }
+    auth: required
+    on_unauthenticated: status401
+
+  # Page routes — auth required, redirect to login
+  - match: { path: "/dashboard/**" }
+    auth: required
+    on_unauthenticated: redirect_login
+
+  - match: { path: "/settings/**" }
+    auth: required
+    on_unauthenticated: redirect_login
+
+  # Default — pass through with optional auth (inject identity if present)
+  - match: { path: "/**" }
+    auth: optional

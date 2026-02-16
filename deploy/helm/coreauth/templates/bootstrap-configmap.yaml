@@ -1,0 +1,170 @@
+{{- if .Values.bootstrap.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "coreauth.fullname" . }}-bootstrap
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "coreauth.labels" . | nindent 4 }}
+    app.kubernetes.io/component: bootstrap
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+data:
+  bootstrap.sh: |
+    #!/bin/sh
+    # CoreAuth On-Prem Bootstrap
+    # Auto-provisions tenant, admin user, and OAuth application.
+    # Runs as a one-shot init container after backend is healthy.
+    set -e
+
+    SENTINEL="/data/.bootstrapped"
+    CREDS_FILE="/data/credentials.json"
+
+    # ── Idempotency check ────────────────────────────────────────
+    if [ -f "$SENTINEL" ]; then
+      echo "[bootstrap] Already bootstrapped. Remove $SENTINEL to re-run."
+      exit 0
+    fi
+
+    echo "============================================"
+    echo "  CoreAuth On-Prem Bootstrap"
+    echo "============================================"
+    echo ""
+
+    API="${BACKEND_URL:-http://backend:3000}"
+
+    # ── Step 1: Create tenant + admin user ───────────────────────
+    echo "[1/3] Creating tenant '${TENANT_SLUG}'..."
+
+    TENANT_RESP=$(curl -s -w "\n%{http_code}" -X POST "${API}/api/tenants" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"name\": \"${TENANT_NAME}\",
+        \"slug\": \"${TENANT_SLUG}\",
+        \"admin_email\": \"${ADMIN_EMAIL}\",
+        \"admin_password\": \"${ADMIN_PASSWORD}\",
+        \"admin_full_name\": \"${ADMIN_FULL_NAME:-Admin User}\"
+      }")
+
+    TENANT_HTTP=$(echo "$TENANT_RESP" | tail -1)
+    TENANT_BODY=$(echo "$TENANT_RESP" | sed '$d')
+
+    if [ "$TENANT_HTTP" = "200" ] || [ "$TENANT_HTTP" = "201" ]; then
+      TENANT_ID=$(echo "$TENANT_BODY" | sed -n 's/.*"tenant_id"\s*:\s*"\([^"]*\)".*/\1/p')
+      echo "       Tenant created: ${TENANT_ID}"
+    elif [ "$TENANT_HTTP" = "409" ]; then
+      echo "       Tenant '${TENANT_SLUG}' already exists (409). Continuing..."
+    else
+      echo "       ERROR: Failed to create tenant (HTTP ${TENANT_HTTP})"
+      echo "       Response: ${TENANT_BODY}"
+      exit 1
+    fi
+
+    # ── Step 2: Login as admin to get JWT ────────────────────────
+    echo "[2/3] Logging in as admin..."
+
+    LOGIN_RESP=$(curl -s -w "\n%{http_code}" -X POST "${API}/api/auth/login" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"tenant_id\": \"${TENANT_SLUG}\",
+        \"email\": \"${ADMIN_EMAIL}\",
+        \"password\": \"${ADMIN_PASSWORD}\"
+      }")
+
+    LOGIN_HTTP=$(echo "$LOGIN_RESP" | tail -1)
+    LOGIN_BODY=$(echo "$LOGIN_RESP" | sed '$d')
+
+    if [ "$LOGIN_HTTP" != "200" ]; then
+      echo "       ERROR: Login failed (HTTP ${LOGIN_HTTP})"
+      echo "       Response: ${LOGIN_BODY}"
+      exit 1
+    fi
+
+    ACCESS_TOKEN=$(echo "$LOGIN_BODY" | sed -n 's/.*"access_token"\s*:\s*"\([^"]*\)".*/\1/p')
+
+    if [ -z "$ACCESS_TOKEN" ]; then
+      echo "       ERROR: Could not extract access_token from login response"
+      echo "       Response: ${LOGIN_BODY}"
+      exit 1
+    fi
+
+    echo "       Authenticated successfully."
+
+    # Extract tenant_id from login response if we didn't get it from create (409 case)
+    if [ -z "$TENANT_ID" ]; then
+      TENANT_ID=$(echo "$LOGIN_BODY" | sed -n 's/.*"tenant_id"\s*:\s*"\([^"]*\)".*/\1/p')
+    fi
+
+    if [ -z "$TENANT_ID" ]; then
+      echo "       WARNING: Could not determine tenant_id. Application creation may fail."
+    fi
+
+    # ── Step 3: Create OAuth application ─────────────────────────
+    echo "[3/3] Creating application '${APP_NAME}'..."
+
+    # Build callback_urls JSON array
+    CALLBACK_JSON=$(echo "${APP_CALLBACK_URLS}" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
+
+    APP_RESP=$(curl -s -w "\n%{http_code}" -X POST "${API}/api/organizations/${TENANT_ID}/applications" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+      -d "{
+        \"name\": \"${APP_NAME}\",
+        \"slug\": \"${APP_SLUG:-my-app}\",
+        \"app_type\": \"${APP_TYPE:-webapp}\",
+        \"callback_urls\": ${CALLBACK_JSON}
+      }")
+
+    APP_HTTP=$(echo "$APP_RESP" | tail -1)
+    APP_BODY=$(echo "$APP_RESP" | sed '$d')
+
+    if [ "$APP_HTTP" = "200" ] || [ "$APP_HTTP" = "201" ]; then
+      CLIENT_ID=$(echo "$APP_BODY" | sed -n 's/.*"client_id"\s*:\s*"\([^"]*\)".*/\1/p')
+      CLIENT_SECRET=$(echo "$APP_BODY" | sed -n 's/.*"client_secret_plain"\s*:\s*"\([^"]*\)".*/\1/p')
+      echo "       Application created."
+    elif [ "$APP_HTTP" = "409" ]; then
+      echo "       Application already exists (409). Skipping."
+      CLIENT_ID="(already exists - check dashboard)"
+      CLIENT_SECRET="(already exists - check dashboard)"
+    else
+      echo "       ERROR: Failed to create application (HTTP ${APP_HTTP})"
+      echo "       Response: ${APP_BODY}"
+      exit 1
+    fi
+
+    # ── Write credentials file ───────────────────────────────────
+    cat > "$CREDS_FILE" << CREDS_EOF
+    {
+      "tenant_id": "${TENANT_ID}",
+      "tenant_slug": "${TENANT_SLUG}",
+      "admin_email": "${ADMIN_EMAIL}",
+      "client_id": "${CLIENT_ID}",
+      "client_secret": "${CLIENT_SECRET}",
+      "api_url": "${API}"
+    }
+    CREDS_EOF
+
+    # ── Create sentinel ──────────────────────────────────────────
+    date -u > "$SENTINEL"
+
+    # ── Print summary ────────────────────────────────────────────
+    echo ""
+    echo "============================================"
+    echo "  CoreAuth Bootstrap Complete"
+    echo "============================================"
+    echo ""
+    echo "  Tenant:        ${TENANT_NAME} (${TENANT_SLUG})"
+    echo "  Tenant ID:     ${TENANT_ID}"
+    echo "  Admin Email:   ${ADMIN_EMAIL}"
+    echo "  API URL:       ${API}"
+    echo ""
+    echo "  OAuth Application:"
+    echo "    Client ID:     ${CLIENT_ID}"
+    echo "    Client Secret: ${CLIENT_SECRET}"
+    echo ""
+    echo "  Credentials saved to: ${CREDS_FILE}"
+    echo ""
+    echo "============================================"
+{{- end }}

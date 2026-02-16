@@ -1,0 +1,380 @@
+<%- include('header') %>
+<div class="max-w-3xl">
+  <h1 class="text-2xl font-bold text-gray-900 mb-1">Settings</h1>
+  <p class="text-sm text-gray-500 mb-6">Configure branding, SSO, and MFA for your tenant via CoreAuth</p>
+
+  <!-- Branding Settings -->
+  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-1">Branding</h2>
+    <p class="text-xs text-gray-500 mb-4">Customize how your emails and login pages look to users</p>
+    <form method="POST" action="/admin/settings/branding">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">App Name</label>
+          <input type="text" name="app_name" value="<%= branding.app_name || '' %>" placeholder="My App"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <p class="text-xs text-gray-400 mt-1">Used in email templates (e.g. "The My App Team"). Defaults to "CoreAuth".</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Logo URL</label>
+          <input type="url" name="logo_url" value="<%= branding.logo_url || '' %>" placeholder="https://example.com/logo.png"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <p class="text-xs text-gray-400 mt-1">Displayed in email headers and the login page</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Primary Color</label>
+          <div class="flex items-center gap-3">
+            <input type="color" name="primary_color" value="<%= branding.primary_color || '#2563eb' %>"
+                   class="w-10 h-10 rounded border border-gray-300 cursor-pointer" id="brandColorPicker">
+            <input type="text" id="brandColorText" value="<%= branding.primary_color || '#2563eb' %>" readonly
+                   class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-28 bg-gray-50 text-gray-600">
+          </div>
+          <p class="text-xs text-gray-400 mt-1">Used for buttons and links in emails and the login page</p>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+          <p class="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Email Preview</p>
+          <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+            <div id="previewHeader" class="text-center mb-3">
+              <span id="previewName" style="font-size: 1.2rem; font-weight: 700; color: <%= branding.primary_color || '#2563eb' %>;">
+                <%= branding.app_name || 'CoreAuth' %>
+              </span>
+            </div>
+            <p class="text-sm text-gray-700 mb-2">Hi User, please verify your email:</p>
+            <a id="previewButton" href="#"
+               style="display: inline-block; padding: 8px 16px; background-color: <%= branding.primary_color || '#2563eb' %>; color: white; text-decoration: none; border-radius: 4px; font-size: 13px;">
+              Verify Email
+            </a>
+            <p class="text-xs text-gray-400 mt-3">Best regards,<br>The <span id="previewFooter"><%= branding.app_name || 'CoreAuth' %></span> Team</p>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+        Save Branding
+      </button>
+    </form>
+  </div>
+
+  <script>
+    // Live preview for branding
+    const colorPicker = document.getElementById('brandColorPicker');
+    const colorText = document.getElementById('brandColorText');
+    const nameInput = document.querySelector('input[name="app_name"]');
+    const previewName = document.getElementById('previewName');
+    const previewButton = document.getElementById('previewButton');
+    const previewFooter = document.getElementById('previewFooter');
+
+    if (colorPicker) {
+      colorPicker.addEventListener('input', (e) => {
+        const color = e.target.value;
+        colorText.value = color;
+        previewName.style.color = color;
+        previewButton.style.backgroundColor = color;
+      });
+    }
+    if (nameInput) {
+      nameInput.addEventListener('input', (e) => {
+        const name = e.target.value || 'CoreAuth';
+        previewName.textContent = name;
+        previewFooter.textContent = name;
+      });
+    }
+  </script>
+
+  <!-- MFA Settings -->
+  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Multi-Factor Authentication (MFA)</h2>
+    <form method="POST" action="/admin/settings/mfa">
+      <div class="space-y-4">
+        <label class="flex items-center gap-3">
+          <input type="checkbox" name="mfa_required" class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                 <%= security.mfa_required ? 'checked' : '' %>>
+          <div>
+            <span class="text-sm font-medium text-gray-900">Require MFA for all users</span>
+            <p class="text-xs text-gray-500">Users will be prompted to set up MFA on their next login</p>
+          </div>
+        </label>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Allowed MFA Methods</label>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2">
+              <input type="checkbox" name="mfa_methods" value="totp" class="w-4 h-4 rounded border-gray-300 text-indigo-600"
+                     <%= (!security.mfa_methods || security.mfa_methods.includes?.('totp')) ? 'checked' : '' %>>
+              <span class="text-sm text-gray-700">TOTP (Authenticator App)</span>
+            </label>
+            <label class="flex items-center gap-2">
+              <input type="checkbox" name="mfa_methods" value="sms" class="w-4 h-4 rounded border-gray-300 text-indigo-600"
+                     <%= security.mfa_methods?.includes?.('sms') ? 'checked' : '' %>>
+              <span class="text-sm text-gray-700">SMS</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+        Save MFA Settings
+      </button>
+    </form>
+  </div>
+
+  <!-- SSO Connections -->
+  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900">SSO Connections</h2>
+        <p class="text-xs text-gray-500 mt-0.5">Connect enterprise identity providers for single sign-on</p>
+      </div>
+    </div>
+
+    <!-- Callback URL -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-5">
+      <p class="text-xs font-medium text-blue-800 mb-1">Redirect / Callback URI (add this to your identity provider)</p>
+      <div class="flex items-center gap-2">
+        <code class="flex-1 text-xs bg-white px-3 py-1.5 rounded border border-blue-200 text-blue-900 font-mono select-all"><%= callbackUrl %></code>
+        <button onclick="navigator.clipboard.writeText('<%= callbackUrl %>')" class="text-xs text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap">Copy</button>
+      </div>
+    </div>
+
+    <!-- Existing Connections -->
+    <% if (providers.length > 0) { %>
+    <div class="space-y-3 mb-5">
+      <% providers.forEach(function(p) { %>
+      <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center text-lg
+            <% if (p.provider_type === 'azuread' || p.provider_type === 'entra') { %>bg-blue-100<% } else if (p.provider_type === 'okta') { %>bg-indigo-100<% } else if (p.provider_type === 'google') { %>bg-red-50<% } else if (p.provider_type === 'auth0') { %>bg-orange-100<% } else { %>bg-gray-100<% } %>
+          ">
+            <% if (p.provider_type === 'azuread' || p.provider_type === 'entra') { %>
+              <svg class="w-5 h-5 text-blue-600" viewBox="0 0 23 23"><path fill="currentColor" d="M1 1h10v10H1zM12 1h10v10H12zM1 12h10v10H1zM12 12h10v10H12z"/></svg>
+            <% } else if (p.provider_type === 'okta') { %>
+              <svg class="w-5 h-5 text-indigo-600" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+            <% } else if (p.provider_type === 'google') { %>
+              <span class="text-base">G</span>
+            <% } else if (p.provider_type === 'auth0') { %>
+              <span class="text-base">A0</span>
+            <% } else { %>
+              <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            <% } %>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-900"><%= p.name %></p>
+            <p class="text-xs text-gray-500">
+              <% if (p.provider_type === 'azuread' || p.provider_type === 'entra') { %>Microsoft Entra ID<% } else if (p.provider_type === 'okta') { %>Okta<% } else if (p.provider_type === 'google') { %>Google Workspace<% } else if (p.provider_type === 'auth0') { %>Auth0<% } else { %>Custom OIDC<% } %>
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <form method="POST" action="/admin/settings/sso/<%= p.id %>/toggle" class="inline">
+            <input type="hidden" name="is_enabled" value="<%= p.is_enabled ? 'false' : 'true' %>">
+            <button type="submit" class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors
+              <%= p.is_enabled ? 'bg-green-500' : 'bg-gray-300' %>
+            ">
+              <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform
+                <%= p.is_enabled ? 'translate-x-4' : 'translate-x-0.5' %>
+              "></span>
+            </button>
+          </form>
+          <form method="POST" action="/admin/settings/sso/<%= p.id %>/delete" class="inline" onsubmit="return confirm('Remove this SSO connection?')">
+            <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    <% } %>
+
+    <!-- Add New Connection -->
+    <div class="border border-dashed border-gray-300 rounded-lg p-5">
+      <p class="text-sm font-medium text-gray-900 mb-3">Add SSO Connection</p>
+
+      <!-- Provider Picker -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4" id="providerPicker">
+        <% const providerMeta = {
+          azuread: { icon: '&#9638;', label: 'Microsoft Entra ID', color: 'blue' },
+          okta: { icon: '&#9678;', label: 'Okta', color: 'indigo' },
+          google: { icon: 'G', label: 'Google Workspace', color: 'red' },
+          auth0: { icon: 'A0', label: 'Auth0', color: 'orange' },
+        }; %>
+        <% templates.forEach(function(t) { const m = providerMeta[t.provider_type] || { icon: '?', label: t.display_name, color: 'gray' }; %>
+        <button type="button" onclick="selectProvider('<%= t.provider_type %>')"
+          class="provider-btn flex flex-col items-center gap-2 p-3 border-2 border-gray-200 rounded-lg hover:border-<%= m.color %>-400 hover:bg-<%= m.color %>-50 transition-colors text-center"
+          data-type="<%= t.provider_type %>">
+          <span class="text-xl"><%= m.icon %></span>
+          <span class="text-xs font-medium text-gray-700"><%= m.label %></span>
+        </button>
+        <% }) %>
+        <button type="button" onclick="selectProvider('custom')"
+          class="provider-btn flex flex-col items-center gap-2 p-3 border-2 border-gray-200 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors text-center"
+          data-type="custom">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span class="text-xs font-medium text-gray-700">Custom OIDC</span>
+        </button>
+      </div>
+
+      <!-- Setup Form (hidden until provider selected) -->
+      <form method="POST" action="/admin/settings/sso" id="ssoForm" class="hidden space-y-4">
+        <input type="hidden" name="provider_type" id="ssoProviderType">
+
+        <!-- Instructions -->
+        <div id="ssoInstructions" class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 hidden"></div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Connection Name</label>
+          <input type="text" name="name" id="ssoName" required placeholder="e.g. Acme Corp SSO"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        </div>
+
+        <!-- Azure-specific: Tenant ID -->
+        <div id="fieldAzureTenantId" class="hidden">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Azure Tenant ID (Directory ID)</label>
+          <input type="text" name="azure_tenant_id" placeholder="e.g. 12345678-abcd-1234-efgh-123456789012"
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono">
+          <p class="text-xs text-gray-400 mt-1">Found in Azure Portal > Entra ID > Overview > Tenant ID</p>
+        </div>
+
+        <!-- Okta/Auth0-specific: Domain -->
+        <div id="fieldDomain" class="hidden">
+          <label class="block text-xs font-medium text-gray-600 mb-1" id="domainLabel">Domain</label>
+          <input type="text" name="domain" id="domainInput" placeholder=""
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono">
+          <p class="text-xs text-gray-400 mt-1" id="domainHint"></p>
+        </div>
+
+        <!-- Common: Client ID + Secret -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Client ID</label>
+            <input type="text" name="client_id" required placeholder="Application (Client) ID"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Client Secret</label>
+            <input type="password" name="client_secret" required placeholder="Client Secret Value"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          </div>
+        </div>
+
+        <!-- Custom OIDC: Manual endpoints -->
+        <div id="customFields" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Issuer URL</label>
+            <input type="text" name="issuer" placeholder="https://idp.example.com"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Authorization Endpoint</label>
+              <input type="text" name="authorization_endpoint" placeholder="https://..."
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Token Endpoint</label>
+              <input type="text" name="token_endpoint" placeholder="https://..."
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">JWKS URI</label>
+            <input type="text" name="jwks_uri" placeholder="https://..."
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          </div>
+        </div>
+
+        <!-- Admin Group Mapping (optional) -->
+        <div class="border-t border-gray-200 pt-4 mt-2">
+          <p class="text-xs font-medium text-gray-700 mb-1">Admin Group Mapping <span class="text-gray-400 font-normal">(optional)</span></p>
+          <p class="text-xs text-gray-500 mb-2">Users in this IdP group will be assigned the "admin" role in your tenant. All other SSO users get "member" access.</p>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Admin Group ID / Name</label>
+            <input type="text" name="admin_group_id" placeholder="e.g. Admins or group Object ID"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono">
+            <p class="text-xs text-gray-400 mt-1">For Entra ID use the group Object ID, for Okta/Auth0 use the group name</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+            Create Connection
+          </button>
+          <button type="button" onclick="cancelProvider()" class="px-4 py-2 text-gray-600 text-sm font-medium hover:text-gray-800">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Store templates from server
+    const templates = <%- JSON.stringify(templates) %>;
+
+    function selectProvider(type) {
+      const form = document.getElementById('ssoForm');
+      const picker = document.getElementById('providerPicker');
+      form.classList.remove('hidden');
+      document.getElementById('ssoProviderType').value = type;
+
+      // Highlight selected
+      document.querySelectorAll('.provider-btn').forEach(b => {
+        b.classList.toggle('border-indigo-500', b.dataset.type === type);
+        b.classList.toggle('bg-indigo-50', b.dataset.type === type);
+        b.classList.toggle('border-gray-200', b.dataset.type !== type);
+      });
+
+      // Show/hide provider-specific fields
+      const azureField = document.getElementById('fieldAzureTenantId');
+      const domainField = document.getElementById('fieldDomain');
+      const customFields = document.getElementById('customFields');
+      const instructions = document.getElementById('ssoInstructions');
+      const nameInput = document.getElementById('ssoName');
+
+      azureField.classList.add('hidden');
+      domainField.classList.add('hidden');
+      customFields.classList.add('hidden');
+      instructions.classList.add('hidden');
+
+      const tmpl = templates.find(t => t.provider_type === type);
+
+      if (type === 'azuread' || type === 'entra') {
+        azureField.classList.remove('hidden');
+        nameInput.placeholder = 'e.g. Acme Corp Entra ID';
+      } else if (type === 'okta') {
+        domainField.classList.remove('hidden');
+        document.getElementById('domainLabel').textContent = 'Okta Domain';
+        document.getElementById('domainInput').placeholder = 'dev-12345.okta.com';
+        document.getElementById('domainHint').textContent = 'Found in Okta Admin Console URL bar';
+        nameInput.placeholder = 'e.g. Acme Corp Okta';
+      } else if (type === 'auth0') {
+        domainField.classList.remove('hidden');
+        document.getElementById('domainLabel').textContent = 'Auth0 Domain';
+        document.getElementById('domainInput').placeholder = 'your-tenant.us.auth0.com';
+        document.getElementById('domainHint').textContent = 'Found in Auth0 Dashboard > Settings';
+        nameInput.placeholder = 'e.g. Acme Corp Auth0';
+      } else if (type === 'google') {
+        nameInput.placeholder = 'e.g. Acme Corp Google';
+      } else {
+        customFields.classList.remove('hidden');
+        nameInput.placeholder = 'e.g. Corporate SSO';
+      }
+
+      if (tmpl && tmpl.instructions) {
+        instructions.textContent = tmpl.instructions;
+        instructions.classList.remove('hidden');
+      }
+    }
+
+    function cancelProvider() {
+      document.getElementById('ssoForm').classList.add('hidden');
+      document.querySelectorAll('.provider-btn').forEach(b => {
+        b.classList.remove('border-indigo-500', 'bg-indigo-50');
+        b.classList.add('border-gray-200');
+      });
+    }
+  </script>
+</div>
+<%- include('footer') %>

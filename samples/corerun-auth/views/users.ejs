@@ -1,0 +1,159 @@
+<%- include('header') %>
+<div class="max-w-5xl">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">User Management</h1>
+      <p class="text-sm text-gray-500 mt-1">Manage users, roles, and invitations for your tenant</p>
+    </div>
+  </div>
+
+  <% if (mfaStatus) { %>
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+      <p class="text-sm text-gray-500">Total Users</p>
+      <p class="text-2xl font-bold text-gray-900 mt-1"><%= mfaStatus.total_users || 0 %></p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+      <p class="text-sm text-gray-500">MFA Enabled</p>
+      <p class="text-2xl font-bold text-green-600 mt-1"><%= mfaStatus.users_with_mfa || 0 %></p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+      <p class="text-sm text-gray-500">MFA Coverage</p>
+      <p class="text-2xl font-bold text-indigo-600 mt-1"><%= mfaStatus.mfa_coverage_percent || 0 %>%</p>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Invite User -->
+  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-3">Invite User</h2>
+    <form method="POST" action="/admin/invitations" class="flex gap-3 items-end">
+      <div class="flex-1">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Email Address</label>
+        <input type="email" name="email" required placeholder="user@example.com"
+               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+      </div>
+      <div class="w-32">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Expires In</label>
+        <select name="expires_in_days" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <option value="7">7 days</option>
+          <option value="14">14 days</option>
+          <option value="30">30 days</option>
+        </select>
+      </div>
+      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+        Send Invite
+      </button>
+    </form>
+  </div>
+
+  <!-- Pending Invitations -->
+  <% if (invitations.length > 0) { %>
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+    <div class="px-4 py-3 bg-yellow-50 border-b border-yellow-100">
+      <h3 class="text-sm font-semibold text-yellow-800">Pending Invitations (<%= invitations.length %>)</h3>
+    </div>
+    <div class="divide-y divide-gray-100">
+      <% invitations.forEach(function(inv) { %>
+      <div class="flex items-center justify-between px-4 py-3">
+        <div>
+          <p class="text-sm font-medium text-gray-900"><%= inv.email %></p>
+          <p class="text-xs text-gray-500">
+            Expires: <%= inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '—' %>
+            <% if (inv.accepted_at) { %>
+              &middot; <span class="text-green-600">Accepted</span>
+            <% } %>
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <% if (!inv.accepted_at) { %>
+          <form method="POST" action="/admin/invitations/<%= inv.id %>/resend" class="inline">
+            <button type="submit" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Resend</button>
+          </form>
+          <form method="POST" action="/admin/invitations/<%= inv.id %>/revoke" class="inline">
+            <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-medium">Revoke</button>
+          </form>
+          <% } %>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Users Table -->
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <table class="w-full">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">User</th>
+          <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">ID</th>
+          <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Role</th>
+          <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+          <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% if (users.length === 0) { %>
+        <tr>
+          <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">No users found</td>
+        </tr>
+        <% } %>
+        <% users.forEach(function(u) { %>
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600">
+                <%= (u.full_name || u.email || '?').charAt(0).toUpperCase() %>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900"><%= u.full_name || 'No name' %></p>
+                <p class="text-xs text-gray-500"><%= u.email %></p>
+              </div>
+            </div>
+          </td>
+          <td class="px-4 py-3">
+            <code class="text-xs bg-gray-100 px-2 py-1 rounded font-mono text-gray-600"><%= u.id %></code>
+          </td>
+          <td class="px-4 py-3">
+            <form method="POST" action="/admin/users/<%= u.id %>/role" class="inline-flex items-center gap-1">
+              <select name="role" onchange="this.form.submit()" class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500
+                <%= u.role === 'admin' ? 'bg-purple-50 text-purple-700' : 'bg-gray-50 text-gray-700' %>
+              ">
+                <option value="member" <%= u.role !== 'admin' ? 'selected' : '' %>>member</option>
+                <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>admin</option>
+              </select>
+            </form>
+          </td>
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <% if (u.email_verified) { %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Verified</span>
+              <% } else { %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Pending</span>
+              <% } %>
+              <% if (u.mfa_enabled) { %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">MFA</span>
+              <% } %>
+              <% if (u.is_active === false) { %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Inactive</span>
+              <% } %>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-xs text-gray-500">
+            <%= u.last_login_at ? 'Last login: ' + new Date(u.last_login_at).toLocaleDateString() : 'Never logged in' %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+    <h3 class="text-sm font-semibold text-indigo-900">User IDs for Sharing</h3>
+    <p class="mt-1 text-sm text-indigo-700">
+      Copy a User ID from the table above to share projects on the project detail page.
+    </p>
+  </div>
+</div>
+<%- include('footer') %>

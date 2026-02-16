@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# CoreAuth Quickstart — automated setup for development
+# Creates a tenant, registers an application, and configures the sample app.
+
+COREAUTH_URL="${COREAUTH_URL:-http://localhost:8000}"
+SAMPLE_APP_PORT="${SAMPLE_APP_PORT:-5050}"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+info()  { echo -e "${CYAN}[INFO]${NC}  $*"; }
+ok()    { echo -e "${GREEN}[OK]${NC}    $*"; }
+warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
+fail()  { echo -e "${RED}[FAIL]${NC}  $*"; exit 1; }
+
+# ── 1. Start CoreAuth ──
+info "Starting CoreAuth via Docker Compose..."
+COMPOSE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -f "$COMPOSE_DIR/docker-compose.yml" ]; then
+  docker compose -f "$COMPOSE_DIR/docker-compose.yml" up -d
+else
+  warn "docker-compose.yml not found at $COMPOSE_DIR — assuming CoreAuth is already running"
+fi
+
+# ── 2. Wait for health check ──
+info "Waiting for CoreAuth to be ready..."
+MAX_WAIT=60
+for i in $(seq 1 $MAX_WAIT); do
+  if curl -sf "$COREAUTH_URL/health" > /dev/null 2>&1; then
+    ok "CoreAuth is ready at $COREAUTH_URL"
+    break
+  fi
+  if [ "$i" -eq "$MAX_WAIT" ]; then
+    fail "CoreAuth did not start within ${MAX_WAIT}s. Check docker logs."
+  fi
+  sleep 1
+done
+
+# ── 3. Create demo tenant ──
+info "Creating demo tenant 'quickstart'..."
+TENANT_RESPONSE=$(curl -sf -X POST "$COREAUTH_URL/api/tenants" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Quickstart Demo",
+    "slug": "quickstart",
+    "admin_email": "admin@quickstart.dev",
+    "admin_password": "QuickStart123!",
+    "admin_full_name": "Admin User"
+  }' 2>&1) || {
+  warn "Tenant creation failed (may already exist). Continuing..."
+  TENANT_RESPONSE=""
+}
+
+TENANT_ID=""
+if [ -n "$TENANT_RESPONSE" ]; then
+  TENANT_ID=$(echo "$TENANT_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tenant_id',''))" 2>/dev/null || echo "")
+fi
+
+if [ -z "$TENANT_ID" ]; then
+  warn "Could not parse tenant_id — you may need to create the tenant manually"
+  warn "Trying to look up existing tenant by slug..."
+  SLUG_RESPONSE=$(curl -sf "$COREAUTH_URL/api/organizations/by-slug/quickstart" 2>/dev/null || echo "")
+  TENANT_ID=$(echo "$SLUG_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || echo "")
+fi
+
+if [ -n "$TENANT_ID" ]; then
+  ok "Tenant ID: $TENANT_ID"
+else
+  fail "Could not determine tenant ID. Create a tenant manually:\n  curl -X POST $COREAUTH_URL/api/tenants -H 'Content-Type: application/json' -d '{...}'"
+fi
+
+# ── 4. Login as admin ──
+info "Logging in as tenant admin..."
+LOGIN_RESPONSE=$(curl -sf -X POST "$COREAUTH_URL/api/auth/login" \
+  -H 'Content-Type: application/json' \
+  -d "{
+    \"tenant_id\": \"$TENANT_ID\",
+    \"email\": \"admin@quickstart.dev\",
+    \"password\": \"QuickStart123!\"
+  }")
+
+ACCESS_TOKEN=$(echo "$LOGIN_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null || echo "")
+
+if [ -z "$ACCESS_TOKEN" ]; then
+  fail "Login failed. Check the tenant credentials."
+fi
+ok "Authenticated successfully"
+
+# ── 5. Register application ──
+info "Registering sample application..."
+APP_RESPONSE=$(curl -sf -X POST "$COREAUTH_URL/api/organizations/$TENANT_ID/applications" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d "{
+    \"name\": \"Quickstart App\",
+    \"slug\": \"quickstart-app\",
+    \"app_type\": \"webapp\",
+    \"callback_urls\": [\"http://localhost:$SAMPLE_APP_PORT/oidc/callback\"],
+    \"logout_urls\": [\"http://localhost:$SAMPLE_APP_PORT\"]
+  }" 2>&1) || {
+  warn "Application registration failed (may already exist)."
+  APP_RESPONSE=""
+}
+
+CLIENT_ID=""
+CLIENT_SECRET=""
+if [ -n "$APP_RESPONSE" ]; then
+  CLIENT_ID=$(echo "$APP_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('client_id',''))" 2>/dev/null || echo "")
+  CLIENT_SECRET=$(echo "$APP_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('client_secret_plain',''))" 2>/dev/null || echo "")
+fi
+
+if [ -n "$CLIENT_ID" ] && [ -n "$CLIENT_SECRET" ]; then
+  ok "Application registered: client_id=$CLIENT_ID"
+else
+  warn "Could not parse application credentials. Check if app already exists."
+fi
+
+# ── 6. Configure branding ──
+info "Setting demo branding..."
+curl -sf -X PUT "$COREAUTH_URL/api/organizations/$TENANT_ID/branding" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "app_name": "Quickstart Demo",
+    "primary_color": "#6366f1"
+  }' > /dev/null 2>&1 && ok "Branding configured" || warn "Branding update failed (non-critical)"
+
+# ── 7. Write .env for sample app ──
+SAMPLE_DIR="$(dirname "$0")/corerun-auth"
+if [ -d "$SAMPLE_DIR" ] && [ -n "$CLIENT_ID" ]; then
+  ENV_FILE="$SAMPLE_DIR/.env"
+  info "Writing $ENV_FILE..."
+  cat > "$ENV_FILE" <<EOF
+# CoreAuth connection (generated by quickstart.sh)
+COREAUTH_BASE_URL=$COREAUTH_URL
+COREAUTH_CLIENT_ID=$CLIENT_ID
+COREAUTH_CLIENT_SECRET=$CLIENT_SECRET
+COREAUTH_CALLBACK_URL=http://localhost:$SAMPLE_APP_PORT/oidc/callback
+
+# App config
+PORT=$SAMPLE_APP_PORT
+SESSION_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+APP_URL=http://localhost:$SAMPLE_APP_PORT
+EOF
+  ok "Sample app .env written"
+fi
+
+# ── 8. Print summary ──
+echo ""
+echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GREEN}  CoreAuth Quickstart Complete!${NC}"
+echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+echo -e "  CoreAuth API:     ${CYAN}$COREAUTH_URL${NC}"
+echo -e "  Tenant:           Quickstart Demo (slug: quickstart)"
+echo -e "  Tenant ID:        ${CYAN}$TENANT_ID${NC}"
+echo -e "  Admin Login:      admin@quickstart.dev / QuickStart123!"
+if [ -n "$CLIENT_ID" ]; then
+echo -e "  Client ID:        ${CYAN}$CLIENT_ID${NC}"
+echo -e "  Client Secret:    ${CYAN}$CLIENT_SECRET${NC}"
+fi
+echo ""
+echo -e "  ${YELLOW}Next steps:${NC}"
+echo -e "    1. cd samples/corerun-auth"
+echo -e "    2. npm install"
+echo -e "    3. npm start"
+echo -e "    4. Open ${CYAN}http://localhost:$SAMPLE_APP_PORT${NC}"
+echo ""
+echo -e "  ${YELLOW}Admin Dashboard:${NC} ${CYAN}http://localhost:3000${NC}"
+echo -e "  ${YELLOW}API Docs:${NC}          docs/DEVELOPER_GUIDE.md"
+echo ""

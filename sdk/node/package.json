@@ -1,0 +1,20 @@
+{
+  "name": "@coreauth/sdk",
+  "version": "0.1.0",
+  "description": "Official Node.js/TypeScript SDK for CoreAuth — multi-tenant CIAM platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": ["dist"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

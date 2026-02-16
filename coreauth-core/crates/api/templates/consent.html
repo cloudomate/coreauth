@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Authorize {{ app_name }}{% endblock %}
+
+{% block primary_color %}{{ branding.primary_color }}{% endblock %}
+{% block primary_hover %}{{ branding.primary_color }}{% endblock %}
+{% block background_color %}{{ branding.background_color }}{% endblock %}
+
+{% block custom_css_block %}
+{% if branding.has_custom_css() %}<style>{{ branding.custom_css }}</style>{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="logo">
+        {% if branding.has_logo() %}
+        <img src="{{ branding.logo_url }}" alt="{{ org_name }}">
+        {% else %}
+        <span class="logo-text">{{ org_name }}</span>
+        {% endif %}
+    </div>
+
+    <h1>Authorize Application</h1>
+    <p class="subtitle">
+        <strong>{{ app_name }}</strong> is requesting access to your account
+    </p>
+
+    <p style="text-align: center; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
+        Signed in as <strong>{{ user_email }}</strong>
+    </p>
+
+    <div style="background: var(--background-color); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+        <p style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem;">
+            This application will be able to:
+        </p>
+
+        <ul class="scope-list">
+            {% for scope in scopes %}
+            <li>
+                <svg class="scope-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {% if scope.name == "openid" %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    {% else if scope.name == "email" %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    {% else if scope.name == "profile" %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    {% else if scope.name == "offline_access" %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    {% else %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    {% endif %}
+                </svg>
+                <div class="scope-info">
+                    <h4>{{ scope.title }}</h4>
+                    <p>{{ scope.description }}</p>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <form method="POST" action="/consent">
+        <input type="hidden" name="request_id" value="{{ request_id }}">
+
+        <div class="button-group">
+            <button type="submit" name="action" value="deny" class="btn btn-secondary">
+                Deny
+            </button>
+            <button type="submit" name="action" value="allow" class="btn btn-primary">
+                Allow
+            </button>
+        </div>
+    </form>
+
+    <div class="footer-links">
+        <a href="/login?request_id={{ request_id }}">Use a different account</a>
+    </div>
+</div>
+{% endblock %}

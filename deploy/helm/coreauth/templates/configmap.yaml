@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "coreauth.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "coreauth.labels" . | nindent 4 }}
+data:
+  RUST_LOG: {{ .Values.config.rustLog | quote }}
+  HOST: {{ .Values.config.host | quote }}
+  PORT: {{ .Values.config.port | quote }}
+  APP_URL: {{ default (printf "http://%s-core:%s" (include "coreauth.fullname" .) .Values.config.port) .Values.config.baseUrl | quote }}
+  CORS_ORIGINS: {{ .Values.config.corsOrigins | quote }}
+  REQUIRE_EMAIL_VERIFICATION: {{ .Values.config.requireEmailVerification | quote }}
+  JWT_ACCESS_TOKEN_EXPIRY: {{ .Values.config.jwt.accessTokenExpiry | quote }}
+  JWT_REFRESH_TOKEN_EXPIRY: {{ .Values.config.jwt.refreshTokenExpiry | quote }}
+  # Email
+  EMAIL_PROVIDER: {{ .Values.config.email.provider | quote }}
+  EMAIL_FROM: {{ .Values.config.email.from | quote }}
+  EMAIL_FROM_NAME: {{ .Values.config.email.fromName | quote }}
+  SMTP_HOST: {{ .Values.config.smtp.host | quote }}
+  SMTP_PORT: {{ .Values.config.smtp.port | quote }}
+  SMTP_USERNAME: {{ .Values.config.smtp.username | quote }}
+  # SMS
+  SMS_ENABLED: {{ .Values.config.sms.enabled | quote }}
+  SMS_PROVIDER: {{ .Values.config.sms.provider | quote }}
+  TWILIO_ACCOUNT_SID: {{ .Values.config.twilio.accountSid | quote }}
+  TWILIO_FROM_NUMBER: {{ .Values.config.twilio.fromNumber | quote }}
+  # SMPP
+  SMPP_HOST: {{ .Values.config.smpp.host | quote }}
+  SMPP_PORT: {{ .Values.config.smpp.port | quote }}
+  SMPP_SYSTEM_ID: {{ .Values.config.smpp.systemId | quote }}
+  SMPP_SYSTEM_TYPE: {{ .Values.config.smpp.systemType | quote }}
+  SMPP_SOURCE_ADDR: {{ .Values.config.smpp.sourceAddr | quote }}
+  # PostgreSQL (for migration entrypoint)
+  POSTGRES_HOST: {{ include "coreauth.postgresHost" . | quote }}
+  POSTGRES_PORT: {{ default "5432" .Values.externalDatabase.port | quote }}
+  POSTGRES_USER: {{ default "coreauth" .Values.externalDatabase.user | quote }}
+  POSTGRES_DB: {{ default "coreauth" .Values.externalDatabase.database | quote }}

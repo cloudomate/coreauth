@@ -1,0 +1,57 @@
+<%- include('header') %>
+<div class="max-w-4xl">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Active Sessions</h1>
+      <p class="text-sm text-gray-500 mt-1">Your active sessions across devices</p>
+    </div>
+  </div>
+
+  <% if (sessions.length === 0) { %>
+  <div class="text-center py-16 bg-white rounded-xl border border-gray-200">
+    <p class="text-sm text-gray-500">No active sessions found.</p>
+  </div>
+  <% } else { %>
+  <div class="space-y-3">
+    <% sessions.forEach(function(s) { %>
+    <div class="bg-white rounded-xl border border-gray-200 p-5 <%= s.is_current ? 'ring-2 ring-indigo-500' : '' %>">
+      <div class="flex items-start justify-between">
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <% if (s.device_type === 'Mobile') { %>
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <% } else { %>
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            <% } %>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-900">
+              <%= s.browser || 'Unknown browser' %> on <%= s.os || 'Unknown OS' %>
+              <% if (s.is_current) { %>
+              <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">Current</span>
+              <% } %>
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              <% if (s.ip_address) { %>IP: <%= s.ip_address %><% } %>
+              <% if (s.location) { %> &middot; <%= s.location %><% } %>
+            </p>
+            <p class="text-xs text-gray-400 mt-1">
+              Created: <%= new Date(s.created_at).toLocaleString() %>
+              &middot; Expires: <%= new Date(s.expires_at).toLocaleString() %>
+            </p>
+          </div>
+        </div>
+        <% if (!s.is_current) { %>
+        <form method="POST" action="/admin/sessions/<%= s.id %>/revoke">
+          <button type="submit" class="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors">
+            Revoke
+          </button>
+        </form>
+        <% } %>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <% } %>
+</div>
+<%- include('footer') %>

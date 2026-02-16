@@ -152,14 +152,14 @@ systemctl restart nginx
 3. **Deploy to ECS**
    ```bash
    # Build and push images
-   docker build -t your-registry/coreauth-backend:latest backend/
-   docker build -t your-registry/coreauth-frontend:latest frontend/
-   docker push your-registry/coreauth-backend:latest
-   docker push your-registry/coreauth-frontend:latest
+   docker build -t your-registry/coreauth-core:latest coreauth-core/
+   docker build -t your-registry/coreauth-ui:latest coreauth-portal/
+   docker push your-registry/coreauth-core:latest
+   docker push your-registry/coreauth-ui:latest
 
    # Create ECS task definition and service
    aws ecs create-task-definition --cli-input-json file://ecs-task-def.json
-   aws ecs create-service --cluster coreauth --service-name coreauth-backend --task-definition coreauth-backend
+   aws ecs create-service --cluster coreauth --service-name coreauth-core --task-definition coreauth-core
    ```
 
 #### Google Cloud (Cloud Run + Cloud SQL)
@@ -175,17 +175,17 @@ systemctl restart nginx
 2. **Deploy to Cloud Run**
    ```bash
    # Build and deploy backend
-   gcloud builds submit --tag gcr.io/PROJECT_ID/coreauth-backend backend/
-   gcloud run deploy coreauth-backend \
-     --image gcr.io/PROJECT_ID/coreauth-backend \
+   gcloud builds submit --tag gcr.io/PROJECT_ID/coreauth-core coreauth-core/
+   gcloud run deploy coreauth-core \
+     --image gcr.io/PROJECT_ID/coreauth-core \
      --platform managed \
      --region us-central1 \
      --add-cloudsql-instances PROJECT_ID:us-central1:coreauth-db
 
    # Build and deploy frontend
-   gcloud builds submit --tag gcr.io/PROJECT_ID/coreauth-frontend frontend/
-   gcloud run deploy coreauth-frontend \
-     --image gcr.io/PROJECT_ID/coreauth-frontend \
+   gcloud builds submit --tag gcr.io/PROJECT_ID/coreauth-ui coreauth-portal/
+   gcloud run deploy coreauth-ui \
+     --image gcr.io/PROJECT_ID/coreauth-ui \
      --platform managed \
      --region us-central1
    ```
@@ -245,7 +245,7 @@ cargo install sqlx-cli
 sqlx migrate run
 
 # Manual
-psql $DATABASE_URL < backend/migrations/001_init.sql
+psql $DATABASE_URL < coreauth-core/migrations/001_init.sql
 ```
 
 ### Creating New Migrations
@@ -255,7 +255,7 @@ psql $DATABASE_URL < backend/migrations/001_init.sql
 sqlx migrate add <migration_name>
 
 # Edit the generated SQL file
-vim backend/migrations/<timestamp>_<migration_name>.sql
+vim coreauth-core/migrations/<timestamp>_<migration_name>.sql
 
 # Test migration
 sqlx migrate run
@@ -271,8 +271,8 @@ docker compose logs -f backend
 docker compose logs -f frontend
 
 # Kubernetes
-kubectl logs -f deployment/coreauth-backend
-kubectl logs -f deployment/coreauth-frontend
+kubectl logs -f deployment/coreauth-core
+kubectl logs -f deployment/coreauth-ui
 ```
 
 ### Health Checks
@@ -289,7 +289,7 @@ Backend exposes Prometheus metrics at `/metrics`:
 ```yaml
 # prometheus.yml
 scrape_configs:
-  - job_name: 'coreauth-backend'
+  - job_name: 'coreauth-core'
     static_configs:
       - targets: ['localhost:8000']
     metrics_path: '/metrics'

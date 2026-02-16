@@ -1,0 +1,71 @@
+<%- include('header') %>
+<div class="max-w-4xl">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Groups</h1>
+      <p class="text-sm text-gray-500 mt-1">Manage user groups for your tenant (<%= total %> total)</p>
+    </div>
+  </div>
+
+  <!-- Create Group -->
+  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-3">Create Group</h2>
+    <form method="POST" action="/admin/groups" class="flex gap-3 items-end">
+      <div class="flex-1">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Group Name</label>
+        <input type="text" name="name" required placeholder="Engineering"
+               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+      </div>
+      <div class="w-48">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Slug</label>
+        <input type="text" name="slug" placeholder="engineering (auto-generated)"
+               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+      </div>
+      <div class="flex-1">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Description</label>
+        <input type="text" name="description" placeholder="Optional description"
+               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+      </div>
+      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+        Create
+      </button>
+    </form>
+  </div>
+
+  <!-- Groups List -->
+  <% if (groups.length === 0) { %>
+  <div class="text-center py-16 bg-white rounded-xl border border-gray-200">
+    <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+    <h3 class="mt-4 text-lg font-medium text-gray-900">No groups yet</h3>
+    <p class="mt-2 text-sm text-gray-500">Create your first group to organize users.</p>
+  </div>
+  <% } else { %>
+  <div class="space-y-3">
+    <% groups.forEach(function(item) { var g = item.group || item; %>
+    <a href="/admin/groups/<%= g.id %>" class="block bg-white rounded-xl border border-gray-200 p-5 hover:border-indigo-300 hover:shadow-md transition-all">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold text-gray-900"><%= g.name %></h3>
+          <% if (g.description) { %>
+          <p class="text-sm text-gray-500 mt-1"><%= g.description %></p>
+          <% } %>
+          <p class="text-xs text-gray-400 mt-1">
+            Slug: <%= g.slug %> &middot;
+            <%= item.member_count || 0 %> member<%= (item.member_count || 0) !== 1 ? 's' : '' %>
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+            <%= g.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' %>
+          ">
+            <%= g.is_active !== false ? 'Active' : 'Inactive' %>
+          </span>
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+    </a>
+    <% }) %>
+  </div>
+  <% } %>
+</div>
+<%- include('footer') %>

@@ -27,7 +27,7 @@ docker compose exec backend cargo test
 ### Frontend Tests
 
 ```bash
-cd frontend
+cd coreauth-portal
 
 # Run tests (when implemented)
 npm test
@@ -41,7 +41,7 @@ npm run test:e2e
 ### Backend Tests
 
 ```
-backend/
+coreauth-core/
 ├── tests/
 │   ├── integration/          # Integration tests
 │   │   ├── auth_tests.rs     # Authentication flows

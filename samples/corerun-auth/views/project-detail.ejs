@@ -1,0 +1,100 @@
+<%- include('header') %>
+<div class="max-w-3xl">
+  <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+    <a href="/dashboard" class="hover:text-indigo-600">Dashboard</a>
+    <span>/</span>
+    <span class="text-gray-900"><%= project.name %></span>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900"><%= project.name %></h1>
+        <p class="text-sm text-gray-500 mt-1">
+          Created by <%= project.owner_email || 'unknown' %>
+          on <%= new Date(project.created_at).toLocaleDateString() %>
+        </p>
+      </div>
+      <div class="flex gap-2">
+        <% if (isEditor) { %>
+        <a href="/projects/<%= project.id %>/edit" class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          Edit
+        </a>
+        <% } %>
+        <% if (isOwner) { %>
+        <form method="POST" action="/projects/<%= project.id %>/delete" onsubmit="return confirm('Delete this project?')">
+          <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            Delete
+          </button>
+        </form>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (project.description) { %>
+    <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+      <p class="text-gray-700"><%= project.description %></p>
+    </div>
+    <% } %>
+  </div>
+
+  <!-- Collaborators -->
+  <div class="mt-6 bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Collaborators</h2>
+
+    <% if (collaborators.length === 0) { %>
+    <p class="text-sm text-gray-500">No collaborators yet. Only the owner has access.</p>
+    <% } else { %>
+    <div class="space-y-2">
+      <% collaborators.forEach(function(c) { %>
+      <div class="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-gray-600">
+            U
+          </div>
+          <span class="text-sm font-medium text-gray-700"><%= c.userId %></span>
+        </div>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+          <%= c.relation === 'owner' ? 'bg-indigo-100 text-indigo-700' : '' %>
+          <%= c.relation === 'editor' ? 'bg-green-100 text-green-700' : '' %>
+          <%= c.relation === 'viewer' ? 'bg-gray-100 text-gray-700' : '' %>
+        ">
+          <%= c.relation %>
+        </span>
+      </div>
+      <% }) %>
+    </div>
+    <% } %>
+
+    <% if (isOwner) { %>
+    <div class="mt-6 pt-4 border-t border-gray-200">
+      <h3 class="text-sm font-semibold text-gray-700 mb-3">Share this project</h3>
+      <form method="POST" action="/projects/<%= project.id %>/share" class="flex gap-2">
+        <input type="text" name="user_id" placeholder="User ID" required
+               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+        <select name="relation" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="editor">Editor</option>
+          <option value="viewer">Viewer</option>
+        </select>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+          Share
+        </button>
+      </form>
+      <p class="mt-2 text-xs text-gray-400">Enter the CoreAuth User ID of the person you want to share with. Find IDs on the <a href="/admin/users" class="text-indigo-600 hover:underline">Users</a> page.</p>
+    </div>
+    <% } %>
+  </div>
+
+  <!-- FGA Info -->
+  <div class="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+    <h3 class="text-sm font-semibold text-indigo-900">FGA Permission Model</h3>
+    <p class="mt-1 text-sm text-indigo-700">
+      <strong>owner</strong> &rarr; can edit, delete, and share &nbsp;|&nbsp;
+      <strong>editor</strong> &rarr; can view and edit &nbsp;|&nbsp;
+      <strong>viewer</strong> &rarr; can view only
+    </p>
+  </div>
+</div>
+<%- include('footer') %>

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "coreauth.core.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "coreauth.labels" . | nindent 4 }}
+    app.kubernetes.io/component: core
+spec:
+  type: {{ .Values.core.service.type }}
+  ports:
+    - port: {{ .Values.core.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "coreauth.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: core

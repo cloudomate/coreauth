@@ -1,0 +1,5 @@
+node_modules/
+corerun.db
+corerun.db-shm
+corerun.db-wal
+sessions.db

@@ -1,0 +1,90 @@
+# CoreAuth Proxy — Reference Configuration
+#
+# NOTE: When using docker compose, the bootstrap container auto-generates
+# this config with real OAuth credentials at /proxy-config/proxy.yaml.
+# This file is kept as a reference for local development without Docker.
+#
+# For local dev: fill in client_id/client_secret from your CoreAuth instance,
+# then run: coreauth-proxy --config proxy.yaml
+
+server:
+  listen: "0.0.0.0:4000"
+  upstream: "http://localhost:3001"
+
+coreauth:
+  url: "http://localhost:8000"
+  client_id: "YOUR_CLIENT_ID"
+  client_secret: "YOUR_CLIENT_SECRET"
+  callback_url: "http://localhost:4000/auth/callback"
+
+session:
+  secret: "change-this-to-a-32-byte-random-hex-string-in-production"
+  cookie_name: "coreauth_session"
+  cookie_domain: ""
+  max_age_seconds: 86400
+  secure: false
+
+fga:
+  store_name: "corerun-auth"
+
+# Route rules — evaluated top-to-bottom, first match wins
+# target: coreauth  → forward to CoreAuth backend (OAuth/login UI)
+# target: upstream  → forward to your app (default)
+routes:
+  # CoreAuth OAuth/login endpoints
+  - match: { path: "/authorize" }
+    target: coreauth
+    auth: none
+  - match: { path: "/login" }
+    target: coreauth
+    auth: none
+  - match: { path: "/signup" }
+    target: coreauth
+    auth: none
+  - match: { path: "/logout" }
+    target: coreauth
+    auth: none
+  - match: { path: "/logged-out" }
+    target: coreauth
+    auth: none
+  - match: { path: "/mfa/**" }
+    target: coreauth
+    auth: none
+  - match: { path: "/consent" }
+    target: coreauth
+    auth: none
+  - match: { path: "/verify-email" }
+    target: coreauth
+    auth: none
+  - match: { path: "/oauth/**" }
+    target: coreauth
+    auth: none
+  - match: { path: "/.well-known/**" }
+    target: coreauth
+    auth: none
+
+  # Static assets — no auth
+  - match: { path: "/app.css" }
+    auth: none
+  - match: { path: "/favicon.ico" }
+    auth: none
+
+  # API routes — return 401 not redirect
+  - match: { path: "/api/**" }
+    auth: required
+    on_unauthenticated: status401
+
+  # App pages — require auth, redirect to login
+  - match: { path: "/dashboard" }
+    auth: required
+    on_unauthenticated: redirect_login
+  - match: { path: "/projects/**" }
+    auth: required
+    on_unauthenticated: redirect_login
+  - match: { path: "/admin/**" }
+    auth: required
+    on_unauthenticated: redirect_login
+
+  # Everything else — optional auth
+  - match: { path: "/**" }
+    auth: optional

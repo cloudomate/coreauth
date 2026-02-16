@@ -1,0 +1,89 @@
+{{- if .Values.bootstrap.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "coreauth.fullname" . }}-bootstrap
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "coreauth.labels" . | nindent 4 }}
+    app.kubernetes.io/component: bootstrap
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "10"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "coreauth.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: bootstrap
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-api
+          image: {{ .Values.bootstrap.image.repository }}:{{ .Values.bootstrap.image.tag }}
+          imagePullPolicy: {{ .Values.bootstrap.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for CoreAuth API to become healthy..."
+              until curl -sf http://{{ include "coreauth.core.fullname" . }}:{{ .Values.core.service.port }}/health > /dev/null 2>&1; do
+                echo "  API not ready yet, retrying in 5s..."
+                sleep 5
+              done
+              echo "API is healthy!"
+      containers:
+        - name: bootstrap
+          image: {{ .Values.bootstrap.image.repository }}:{{ .Values.bootstrap.image.tag }}
+          imagePullPolicy: {{ .Values.bootstrap.image.pullPolicy }}
+          command: ["/bin/sh", "/scripts/bootstrap.sh"]
+          env:
+            - name: BACKEND_URL
+              value: "http://{{ include "coreauth.core.fullname" . }}:{{ .Values.core.service.port }}"
+            - name: TENANT_NAME
+              value: {{ .Values.bootstrap.tenant.name | quote }}
+            - name: TENANT_SLUG
+              value: {{ .Values.bootstrap.tenant.slug | quote }}
+            - name: ADMIN_EMAIL
+              value: {{ .Values.bootstrap.admin.email | quote }}
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "coreauth.secretName" . }}
+                  key: admin-password
+            - name: ADMIN_FULL_NAME
+              value: {{ .Values.bootstrap.admin.fullName | quote }}
+            - name: APP_NAME
+              value: {{ .Values.bootstrap.app.name | quote }}
+            - name: APP_SLUG
+              value: {{ .Values.bootstrap.app.slug | quote }}
+            - name: APP_TYPE
+              value: {{ .Values.bootstrap.app.type | quote }}
+            - name: APP_CALLBACK_URLS
+              value: {{ .Values.bootstrap.app.callbackUrls | quote }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ include "coreauth.fullname" . }}-bootstrap
+            defaultMode: 0755
+        {{- if .Values.bootstrap.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "coreauth.fullname" . }}-bootstrap-data
+        {{- else }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+{{- end }}

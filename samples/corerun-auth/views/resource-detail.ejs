@@ -1,0 +1,163 @@
+<%- include('header') %>
+<nav class="text-sm text-gray-500 mb-4">
+  <a href="/workspaces" class="hover:text-indigo-600">Workspaces</a>
+  <span class="mx-2">/</span>
+  <% if (workspace) { %>
+  <a href="/workspaces/<%= workspace.id %>" class="hover:text-indigo-600"><%= workspace.name %></a>
+  <span class="mx-2">/</span>
+  <a href="/workspaces/<%= workspace.id %>/resources/<%= resourceType %>" class="hover:text-indigo-600"><%= typeConfig.plural %></a>
+  <% } %>
+  <span class="mx-2">/</span>
+  <span class="text-gray-900"><%= resource.name %></span>
+</nav>
+
+<div class="flex items-start justify-between mb-6">
+  <div>
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl font-bold text-gray-900"><%= resource.name %></h1>
+      <%
+        const statusColors = {
+          running: 'bg-green-100 text-green-700', active: 'bg-green-100 text-green-700',
+          stopped: 'bg-red-100 text-red-700', inactive: 'bg-red-100 text-red-700',
+          terminated: 'bg-gray-100 text-gray-600',
+          pending: 'bg-yellow-100 text-yellow-700', provisioning: 'bg-yellow-100 text-yellow-700',
+          available: 'bg-blue-100 text-blue-700',
+          'in-use': 'bg-indigo-100 text-indigo-700',
+          maintenance: 'bg-orange-100 text-orange-700',
+          failed: 'bg-red-100 text-red-700',
+        };
+        const sc = statusColors[resource.status] || 'bg-gray-100 text-gray-600';
+      %>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= sc %>"><%= resource.status %></span>
+    </div>
+    <p class="text-sm text-gray-500 mt-1"><%= typeConfig.label %> &middot; <span class="font-mono"><%= resource.id %></span></p>
+    <div class="flex items-center gap-4 mt-1 text-xs text-gray-400">
+      <span>Owner: <strong class="text-gray-600"><%= resource.owner_email || resource.owner_id.slice(0,8) %></strong></span>
+      <span>Created: <%= new Date(resource.created_at).toLocaleDateString() %></span>
+    </div>
+  </div>
+  <% if (isOwner) { %>
+  <form method="POST" action="/resources/<%= resourceType %>/<%= resource.id %>/delete"
+        onsubmit="return confirm('Delete this <%= typeConfig.label.toLowerCase() %>?')">
+    <button type="submit" class="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
+      Delete
+    </button>
+  </form>
+  <% } %>
+</div>
+
+<!-- Actions -->
+<% if (Object.keys(typeConfig.actions).length > 0) { %>
+<div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+  <h3 class="font-semibold text-gray-900 mb-3">Actions</h3>
+  <div class="flex flex-wrap gap-2">
+    <% Object.entries(typeConfig.actions).forEach(function([action, cfg]) { %>
+    <form method="POST" action="/resources/<%= resourceType %>/<%= resource.id %>/action" class="inline">
+      <input type="hidden" name="action" value="<%= action %>">
+      <button type="submit"
+        <%= userPermissions[action] ? '' : 'disabled' %>
+        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+          <%= userPermissions[action]
+            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
+            : 'bg-gray-50 text-gray-400 border border-gray-200 cursor-not-allowed' %>"
+        title="<%= userPermissions[action] ? '' : 'Requires ' + cfg.requires + ' permission' %>">
+        <%= cfg.label %>
+      </button>
+    </form>
+    <% }) %>
+  </div>
+  <p class="mt-2 text-xs text-gray-400">Disabled actions require higher permission level.</p>
+</div>
+<% } %>
+
+<!-- Configuration -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <h3 class="font-semibold text-gray-900 mb-3">Configuration</h3>
+    <% if (typeConfig.fields.length === 0 && (!resource.config || Object.keys(resource.config).length === 0)) { %>
+    <p class="text-sm text-gray-500">No configuration.</p>
+    <% } else { %>
+    <dl class="space-y-2">
+      <% typeConfig.fields.forEach(function(field) { %>
+      <div class="flex justify-between">
+        <dt class="text-sm text-gray-500"><%= field.label %></dt>
+        <dd class="text-sm font-medium text-gray-900"><%= resource.config?.[field.name] || '-' %></dd>
+      </div>
+      <% }) %>
+    </dl>
+    <% } %>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <h3 class="font-semibold text-gray-900 mb-3">Details</h3>
+    <dl class="space-y-2">
+      <div class="flex justify-between">
+        <dt class="text-sm text-gray-500">Resource Type</dt>
+        <dd class="text-sm font-medium text-gray-900"><%= typeConfig.label %></dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-sm text-gray-500">Workspace</dt>
+        <dd class="text-sm font-medium text-gray-900"><%= workspace ? workspace.name : '-' %></dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-sm text-gray-500">Status</dt>
+        <dd class="text-sm font-medium text-gray-900"><%= resource.status %></dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-sm text-gray-500">Last Updated</dt>
+        <dd class="text-sm font-medium text-gray-900"><%= new Date(resource.updated_at).toLocaleString() %></dd>
+      </div>
+    </dl>
+  </div>
+</div>
+
+<!-- Permissions & Share -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <!-- Collaborators -->
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <h3 class="font-semibold text-gray-900 mb-3">Permissions</h3>
+    <% if (collaborators.length === 0) { %>
+    <p class="text-sm text-gray-500">No direct permission assignments.</p>
+    <% } else { %>
+    <div class="space-y-2">
+      <% collaborators.forEach(function(c) { %>
+      <div class="flex items-center justify-between py-1.5">
+        <span class="text-sm text-gray-700 font-mono"><%= c.userId.slice(0, 12) %>...</span>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700"><%= c.relation %></span>
+      </div>
+      <% }) %>
+    </div>
+    <% } %>
+    <div class="mt-3 p-2 bg-indigo-50 rounded text-xs text-indigo-700">
+      Workspace admins and viewers also have access via inheritance.
+    </div>
+  </div>
+
+  <!-- Share form -->
+  <% if (isOwner) { %>
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <h3 class="font-semibold text-gray-900 mb-3">Share Resource</h3>
+    <form method="POST" action="/resources/<%= resourceType %>/<%= resource.id %>/share" class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+        <input type="text" name="user_id" required
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          placeholder="User ID">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+        <select name="relation" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <% typeConfig.roles.forEach(function(role) { %>
+          <option value="<%= role %>"><%= role %></option>
+          <% }) %>
+        </select>
+      </div>
+      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+        Share
+      </button>
+    </form>
+    <p class="mt-2 text-xs text-gray-400">Role hierarchy: <%= typeConfig.roles.join(' > ') %></p>
+  </div>
+  <% } %>
+</div>
+<%- include('footer') %>

@@ -459,4 +459,4 @@ SELECT slug FROM organizations WHERE slug = 'acme';
 For questions or support, check:
 - [JavaScript SDK Documentation](../sdks/javascript/README.md)
 - [imys Setup Guide](IMYS_SETUP_GUIDE.md)
-- [API Reference](../backend/README.md)
+- [API Reference](../coreauth-core/README.md)

@@ -1,0 +1,23 @@
+{{- if and .Values.bootstrap.enabled .Values.bootstrap.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "coreauth.fullname" . }}-bootstrap-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "coreauth.labels" . | nindent 4 }}
+    app.kubernetes.io/component: bootstrap
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    {{- range .Values.bootstrap.persistence.accessModes }}
+    - {{ . }}
+    {{- end }}
+  {{- if .Values.bootstrap.persistence.storageClass }}
+  storageClassName: {{ .Values.bootstrap.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.bootstrap.persistence.size }}
+{{- end }}

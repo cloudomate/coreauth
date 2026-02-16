@@ -42,7 +42,7 @@ For development with hot-reload:
 
 ```bash
 # Frontend development
-cd frontend
+cd coreauth-portal
 npm install
 npm run dev
 

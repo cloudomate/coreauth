@@ -1,0 +1,93 @@
+<%- include('header') %>
+<div class="max-w-4xl">
+  <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+    <a href="/admin/groups" class="hover:text-indigo-600">Groups</a>
+    <span>/</span>
+    <span class="text-gray-900"><%= group.name %></span>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900"><%= group.name %></h1>
+        <% if (group.description) { %>
+        <p class="text-sm text-gray-500 mt-1"><%= group.description %></p>
+        <% } %>
+        <p class="text-xs text-gray-400 mt-2">
+          Slug: <code class="bg-gray-100 px-1 rounded"><%= group.slug %></code> &middot;
+          <%= memberCount %> member<%= memberCount !== 1 ? 's' : '' %>
+        </p>
+      </div>
+      <form method="POST" action="/admin/groups/<%= group.id %>/delete" onsubmit="return confirm('Delete this group?')">
+        <button type="submit" class="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
+          Delete Group
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Member -->
+  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-3">Add Member</h2>
+    <form method="POST" action="/admin/groups/<%= group.id %>/members" class="flex gap-3 items-end">
+      <div class="flex-1">
+        <label class="block text-xs font-medium text-gray-600 mb-1">User</label>
+        <select name="user_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="">Select a user...</option>
+          <% users.forEach(function(u) { %>
+          <option value="<%= u.id %>"><%= u.full_name || u.email %> (<%= u.email %>)</option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="w-40">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Role in Group</label>
+        <select name="role" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+        Add
+      </button>
+    </form>
+  </div>
+
+  <!-- Members List -->
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
+      <h3 class="text-sm font-semibold text-gray-700">Members</h3>
+    </div>
+    <% if (members.length === 0) { %>
+    <div class="px-4 py-8 text-center text-sm text-gray-500">No members in this group yet.</div>
+    <% } else { %>
+    <div class="divide-y divide-gray-100">
+      <% members.forEach(function(m) { %>
+      <div class="flex items-center justify-between px-4 py-3">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600">
+            <%= (m.full_name || m.email || '?').charAt(0).toUpperCase() %>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-900"><%= m.full_name || m.email || m.user_id %></p>
+            <% if (m.email) { %>
+            <p class="text-xs text-gray-500"><%= m.email %></p>
+            <% } %>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+            <%= m.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700' %>
+          ">
+            <%= m.role || 'member' %>
+          </span>
+          <form method="POST" action="/admin/groups/<%= group.id %>/members/<%= m.user_id %>/remove">
+            <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-medium">Remove</button>
+          </form>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+</div>
+<%- include('footer') %>

@@ -1,0 +1,84 @@
+<%- include('header') %>
+<nav class="text-sm text-gray-500 mb-4">
+  <a href="/workspaces" class="hover:text-indigo-600">Workspaces</a>
+  <span class="mx-2">/</span>
+  <a href="/workspaces/<%= workspace.id %>" class="hover:text-indigo-600"><%= workspace.name %></a>
+  <span class="mx-2">/</span>
+  <span class="text-gray-900"><%= typeConfig.plural %></span>
+</nav>
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900"><%= typeConfig.plural %></h1>
+    <p class="text-sm text-gray-500 mt-1">in <%= workspace.name %> (<%= workspace.region %>)</p>
+  </div>
+  <a href="/workspaces/<%= workspace.id %>/resources/<%= resourceType %>/new"
+     class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    New <%= typeConfig.label %>
+  </a>
+</div>
+
+<% if (resources.length === 0) { %>
+<div class="text-center py-16">
+  <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
+  <h3 class="mt-4 text-lg font-medium text-gray-900">No <%= typeConfig.plural.toLowerCase() %> yet</h3>
+  <p class="mt-2 text-sm text-gray-500">Create your first <%= typeConfig.label.toLowerCase() %> in this workspace.</p>
+  <a href="/workspaces/<%= workspace.id %>/resources/<%= resourceType %>/new"
+     class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+    Create <%= typeConfig.label %>
+  </a>
+</div>
+<% } else { %>
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
+        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+        <% if (typeConfig.fields.length > 0) { %>
+        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase"><%= typeConfig.fields[0].label %></th>
+        <% } %>
+        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Owner</th>
+        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Created</th>
+        <th class="px-5 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% resources.forEach(function(r) { %>
+      <tr class="hover:bg-gray-50">
+        <td class="px-5 py-3">
+          <a href="/resources/<%= resourceType %>/<%= r.id %>" class="text-sm font-medium text-indigo-600 hover:text-indigo-800"><%= r.name %></a>
+          <p class="text-xs text-gray-400 font-mono mt-0.5"><%= r.id.slice(0, 8) %></p>
+        </td>
+        <td class="px-5 py-3">
+          <%
+            const statusColors = {
+              running: 'bg-green-100 text-green-700', active: 'bg-green-100 text-green-700',
+              stopped: 'bg-red-100 text-red-700', inactive: 'bg-red-100 text-red-700',
+              terminated: 'bg-gray-100 text-gray-600',
+              pending: 'bg-yellow-100 text-yellow-700', provisioning: 'bg-yellow-100 text-yellow-700',
+              available: 'bg-blue-100 text-blue-700',
+              'in-use': 'bg-indigo-100 text-indigo-700',
+              maintenance: 'bg-orange-100 text-orange-700',
+              failed: 'bg-red-100 text-red-700',
+            };
+            const sc = statusColors[r.status] || 'bg-gray-100 text-gray-600';
+          %>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium <%= sc %>"><%= r.status %></span>
+        </td>
+        <% if (typeConfig.fields.length > 0) { %>
+        <td class="px-5 py-3 text-sm text-gray-600"><%= r.config?.[typeConfig.fields[0].name] || '-' %></td>
+        <% } %>
+        <td class="px-5 py-3 text-sm text-gray-500"><%= r.owner_email || r.owner_id.slice(0,8) %></td>
+        <td class="px-5 py-3 text-sm text-gray-400"><%= new Date(r.created_at).toLocaleDateString() %></td>
+        <td class="px-5 py-3 text-right">
+          <a href="/resources/<%= resourceType %>/<%= r.id %>" class="text-sm text-indigo-600 hover:text-indigo-800">View</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+<%- include('footer') %>

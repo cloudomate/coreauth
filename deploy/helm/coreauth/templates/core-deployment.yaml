@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "coreauth.core.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "coreauth.labels" . | nindent 4 }}
+    app.kubernetes.io/component: core
+spec:
+  {{- if not .Values.core.autoscaling.enabled }}
+  replicas: {{ .Values.core.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "coreauth.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: core
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "coreauth.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: core
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "coreauth.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: core
+          image: {{ include "coreauth.core.image" . }}
+          imagePullPolicy: {{ .Values.core.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.core.service.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "coreauth.fullname" . }}
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "coreauth.jwtSecretName" . }}
+                  key: {{ .Values.config.jwt.existingSecretKey | default "jwt-secret" }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "coreauth.dbSecretName" . }}
+                  key: {{ .Values.externalDatabase.existingSecretUrlKey | default "database-url" }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "coreauth.dbSecretName" . }}
+                  key: {{ .Values.externalDatabase.existingSecretPasswordKey | default "db-password" }}
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "coreauth.redisSecretName" . }}
+                  key: {{ .Values.externalRedis.existingSecretKey | default "redis-url" }}
+            {{- if or .Values.config.smtp.password .Values.config.smtp.existingSecret }}
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.smtp.existingSecret | default (include "coreauth.secretName" .) }}
+                  key: {{ .Values.config.smtp.existingSecretKey | default "smtp-password" }}
+            {{- end }}
+            {{- if or .Values.config.twilio.authToken .Values.config.twilio.existingSecret }}
+            - name: TWILIO_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.twilio.existingSecret | default (include "coreauth.secretName" .) }}
+                  key: {{ .Values.config.twilio.existingSecretKey | default "twilio-auth-token" }}
+            {{- end }}
+            {{- if or .Values.config.smpp.password .Values.config.smpp.existingSecret }}
+            - name: SMPP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.smpp.existingSecret | default (include "coreauth.secretName" .) }}
+                  key: {{ .Values.config.smpp.existingSecretKey | default "smpp-password" }}
+            {{- end }}
+            {{- with .Values.core.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.core.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.core.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.core.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.core.resources | nindent 12 }}

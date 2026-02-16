@@ -1,0 +1,29 @@
+apiVersion: v2
+name: coreauth
+description: CoreAuth — Multi-tenant CIAM platform (Customer Identity and Access Management)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - ciam
+  - identity
+  - authentication
+  - authorization
+  - multi-tenant
+  - oauth2
+  - oidc
+home: https://github.com/user/coreauth
+maintainers:
+  - name: CoreAuth
+sources:
+  - https://github.com/user/coreauth
+
+dependencies:
+  - name: postgresql
+    version: "16.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: "20.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled

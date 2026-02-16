@@ -1,0 +1,49 @@
+============================================================
+  CoreAuth has been deployed!
+============================================================
+
+{{- if .Values.ingress.enabled }}
+
+  Access the API at:
+  {{- range .Values.ingress.hosts }}
+    https://{{ .host }}
+  {{- end }}
+{{- else }}
+
+  Access the API via port-forward:
+    kubectl port-forward svc/{{ include "coreauth.core.fullname" . }} 3000:{{ .Values.core.service.port }} -n {{ .Release.Namespace }}
+
+  Then visit: http://localhost:3000
+{{- end }}
+
+{{- if .Values.dashboard.enabled }}
+
+  Dashboard:
+{{- if and .Values.ingress.enabled .Values.ingress.dashboard.enabled }}
+  {{- range .Values.ingress.dashboard.hosts }}
+    https://{{ .host }}
+  {{- end }}
+{{- else }}
+    kubectl port-forward svc/{{ include "coreauth.dashboard.fullname" . }} 8080:{{ .Values.dashboard.service.port }} -n {{ .Release.Namespace }}
+    Then visit: http://localhost:8080
+{{- end }}
+{{- end }}
+
+{{- if .Values.bootstrap.enabled }}
+
+  Bootstrap:
+    The bootstrap job will automatically create your initial tenant and
+    OAuth application. Check credentials with:
+
+    kubectl logs job/{{ include "coreauth.fullname" . }}-bootstrap -n {{ .Release.Namespace }}
+
+  {{- if .Values.bootstrap.persistence.enabled }}
+    Credentials are also persisted at /data/credentials.json in the
+    {{ include "coreauth.fullname" . }}-bootstrap-data PVC.
+  {{- end }}
+{{- end }}
+
+  Health check:
+    curl http://localhost:3000/health
+
+============================================================

@@ -88,7 +88,7 @@ CoreAuth sends SMS for:
 
 ### Email Service
 
-Located in `backend/crates/auth/src/email.rs`:
+Located in `coreauth-core/crates/auth/src/email.rs`:
 
 ```rust
 pub async fn send_verification_email(
@@ -117,7 +117,7 @@ pub async fn send_verification_email(
 
 ### SMS Service
 
-Located in `backend/crates/auth/src/sms.rs`:
+Located in `coreauth-core/crates/auth/src/sms.rs`:
 
 ```rust
 pub async fn send_verification_code(

@@ -1,0 +1,215 @@
+# =============================================================================
+# CoreAuth Helm Chart — values.yaml
+# =============================================================================
+
+# -- Core API (coreauth-core) ------------------------------------------------
+core:
+  replicaCount: 1
+  image:
+    repository: coreauth/core
+    tag: ""  # Defaults to Chart.appVersion
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  startupProbe:
+    httpGet:
+      path: /health
+      port: http
+    failureThreshold: 30
+    periodSeconds: 5
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  extraEnv: []
+  #  - name: EXTRA_VAR
+  #    value: "some-value"
+
+# -- Dashboard / Admin UI (coreauth-portal) ----------------------------------
+dashboard:
+  enabled: false
+  image:
+    repository: coreauth/portal
+    tag: ""  # Defaults to Chart.appVersion
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# -- Bootstrap Job (Helm post-install hook) -----------------------------------
+bootstrap:
+  enabled: true
+  image:
+    repository: curlimages/curl
+    tag: latest
+    pullPolicy: IfNotPresent
+  tenant:
+    name: "My Organization"
+    slug: "my-org"
+  admin:
+    email: "admin@example.com"
+    password: ""  # Auto-generated if empty
+    fullName: "Admin User"
+  app:
+    name: "My Application"
+    slug: "my-app"
+    type: "webapp"
+    callbackUrls: "http://localhost:3000/callback"
+  persistence:
+    enabled: true
+    size: 64Mi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+
+# -- Ingress ------------------------------------------------------------------
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  #  cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: coreauth.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: coreauth-tls
+  #    hosts:
+  #      - coreauth.example.com
+  dashboard:
+    enabled: false
+    annotations: {}
+    hosts:
+      - host: dashboard.coreauth.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+
+# -- Application Config (non-secret) -----------------------------------------
+config:
+  rustLog: "info"
+  host: "0.0.0.0"
+  port: "3000"
+  baseUrl: ""  # e.g. https://coreauth.example.com — derived from ingress if empty
+  corsOrigins: "*"
+  requireEmailVerification: "false"
+  jwt:
+    secret: ""  # Auto-generated if empty
+    existingSecret: ""
+    existingSecretKey: "jwt-secret"
+    accessTokenExpiry: "3600"
+    refreshTokenExpiry: "2592000"
+  email:
+    provider: "console"
+    from: "noreply@coreauth.local"
+    fromName: "CoreAuth"
+  smtp:
+    host: ""
+    port: "587"
+    username: ""
+    password: ""
+    existingSecret: ""
+    existingSecretKey: "smtp-password"
+  sms:
+    enabled: "false"
+    provider: ""
+  twilio:
+    accountSid: ""
+    authToken: ""
+    fromNumber: ""
+    existingSecret: ""
+    existingSecretKey: "twilio-auth-token"
+  smpp:
+    host: ""
+    port: "2775"
+    systemId: ""
+    password: ""
+    systemType: ""
+    sourceAddr: "CoreAuth"
+    existingSecret: ""
+    existingSecretKey: "smpp-password"
+
+# -- External Database (used when postgresql.enabled=false) -------------------
+externalDatabase:
+  host: ""
+  port: "5432"
+  user: "coreauth"
+  password: ""
+  database: "coreauth"
+  existingSecret: ""
+  existingSecretPasswordKey: "db-password"
+  existingSecretUrlKey: "database-url"
+
+# -- External Redis (used when redis.enabled=false) ---------------------------
+externalRedis:
+  url: ""
+  existingSecret: ""
+  existingSecretKey: "redis-url"
+
+# -- Bitnami PostgreSQL subchart (for testing/dev only) -----------------------
+postgresql:
+  enabled: false
+  auth:
+    username: coreauth
+    password: ""
+    database: coreauth
+  primary:
+    persistence:
+      size: 8Gi
+
+# -- Bitnami Redis subchart (for testing/dev only) ---------------------------
+redis:
+  enabled: false
+  architecture: standalone
+  auth:
+    enabled: false
+
+# -- Service Account ----------------------------------------------------------
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# -- Pod Security Context -----------------------------------------------------
+podSecurityContext:
+  runAsUser: 1001
+  runAsNonRoot: true
+  fsGroup: 1001
+
+# -- Image Pull Secrets -------------------------------------------------------
+imagePullSecrets: []
+
+# -- Name overrides -----------------------------------------------------------
+nameOverride: ""
+fullnameOverride: ""

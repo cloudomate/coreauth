@@ -1,0 +1,30 @@
+pub mod auth;
+pub mod authz;
+pub mod audit;
+pub mod billing;
+pub mod fga;
+pub mod health;
+pub mod oidc;
+pub mod oauth2;
+pub mod universal_login;
+pub mod social_login;
+pub mod mfa;
+pub mod tenant;
+pub mod tenant_registry;
+pub mod application;
+pub mod action;
+pub mod test;
+pub mod verification;
+pub mod password_reset;
+pub mod invitation;
+pub mod webhook;
+pub mod scim;
+pub mod sessions;
+pub mod groups;
+pub mod passwordless;
+pub mod self_service;
+pub mod email_templates;
+pub mod connection;
+
+// Re-export common types
+pub use auth::ErrorResponse;

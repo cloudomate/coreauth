@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>core.auth — Brand Guidelines</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --white: #FFFFFF;
+    --black: #0A0A0A;
+    --grey-900: #111111;
+    --grey-700: #555555;
+    --grey-500: #777777;
+    --grey-400: #999999;
+    --grey-300: #AAAAAA;
+    --grey-200: #CCCCCC;
+    --grey-100: #EEEEEE;
+    --grey-50: #F7F7F7;
+    --accent: #999999;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif;
+    background: var(--grey-50);
+    color: var(--grey-900);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Navigation ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0;
+    width: 240px;
+    height: 100vh;
+    background: var(--black);
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  nav .nav-logo {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+  nav .nav-logo span { font-weight: 300; color: var(--grey-300); }
+  nav .nav-logo .dot { color: var(--grey-500); }
+  nav .nav-sub {
+    font-size: 11px;
+    color: var(--grey-500);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 24px;
+  }
+  nav a {
+    display: block;
+    color: var(--grey-400);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  nav a:hover { color: var(--white); background: rgba(255,255,255,0.06); }
+  nav a.active { color: var(--white); background: rgba(255,255,255,0.1); font-weight: 500; }
+
+  /* ── Main Content ── */
+  main {
+    margin-left: 240px;
+    padding: 0;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: var(--black);
+    color: var(--white);
+    padding: 100px 80px 80px;
+    min-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .hero h1 {
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .hero h1 span { font-weight: 300; color: var(--grey-300); }
+  .hero p {
+    font-size: 18px;
+    color: var(--grey-400);
+    max-width: 560px;
+    font-weight: 300;
+  }
+  .hero .version {
+    margin-top: 32px;
+    font-size: 12px;
+    color: var(--grey-500);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── Sections ── */
+  section {
+    padding: 80px;
+    border-bottom: 1px solid var(--grey-200);
+  }
+  section:last-child { border-bottom: none; }
+
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    color: var(--grey-500);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  .section-title {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  .section-desc {
+    font-size: 16px;
+    color: var(--grey-700);
+    max-width: 600px;
+    margin-bottom: 48px;
+    font-weight: 300;
+    line-height: 1.7;
+  }
+
+  /* ── Logo Display ── */
+  .logo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+  .logo-card {
+    border-radius: 16px;
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    position: relative;
+  }
+  .logo-card.dark { background: var(--black); }
+  .logo-card.light { background: var(--white); border: 1px solid var(--grey-200); }
+  .logo-card .label {
+    position: absolute;
+    bottom: 16px;
+    left: 20px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 500;
+  }
+  .logo-card.dark .label { color: var(--grey-500); }
+  .logo-card.light .label { color: var(--grey-400); }
+
+  /* Inline logo rendering */
+  .logo-render {
+    display: flex;
+    align-items: center;
+    font-family: 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif;
+    font-size: 48px;
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+  .logo-render .fp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 40px;
+    margin: 0 -1px;
+  }
+  .logo-render .fp svg { width: 100%; height: 100%; }
+
+  .logo-render.size-sm { font-size: 28px; }
+  .logo-render.size-sm .fp { width: 19px; height: 24px; }
+
+  /* ── Color Palette ── */
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+  }
+  .color-swatch {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--grey-200);
+  }
+  .color-swatch .swatch {
+    height: 100px;
+  }
+  .color-swatch .info {
+    padding: 14px 16px;
+    background: var(--white);
+  }
+  .color-swatch .info .name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .color-swatch .info .hex {
+    font-size: 13px;
+    color: var(--grey-500);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  /* ── Typography ── */
+  .type-row {
+    display: flex;
+    align-items: baseline;
+    gap: 40px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--grey-100);
+  }
+  .type-row:last-child { border-bottom: none; }
+  .type-label {
+    width: 140px;
+    flex-shrink: 0;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--grey-500);
+    font-weight: 500;
+  }
+  .type-sample {
+    flex: 1;
+  }
+
+  /* ── Spacing ── */
+  .spacing-demo {
+    background: var(--black);
+    border-radius: 16px;
+    padding: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-bottom: 24px;
+  }
+  .clearspace-box {
+    border: 1px dashed rgba(255,255,255,0.25);
+    padding: 32px 48px;
+    position: relative;
+  }
+  .clearspace-label {
+    position: absolute;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 1px;
+  }
+  .clearspace-label.top { top: 8px; left: 50%; transform: translateX(-50%); }
+  .clearspace-label.right { right: 8px; top: 50%; transform: translateY(-50%) rotate(90deg); }
+  .clearspace-label.bottom { bottom: 8px; left: 50%; transform: translateX(-50%); }
+  .clearspace-label.left { left: 8px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+
+  /* ── Do's and Don'ts ── */
+  .rules-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .rule-card {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--grey-200);
+  }
+  .rule-card .preview {
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--grey-50);
+  }
+  .rule-card .rule-info {
+    padding: 16px 20px;
+    background: var(--white);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .rule-card .badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .rule-card .badge.do { background: #E8F5E9; color: #2E7D32; }
+  .rule-card .badge.dont { background: #FFEBEE; color: #C62828; }
+  .rule-card .rule-text {
+    font-size: 14px;
+    color: var(--grey-700);
+    line-height: 1.5;
+  }
+
+  /* ── Tone ── */
+  .tone-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .tone-card {
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: 12px;
+    padding: 32px;
+  }
+  .tone-card h4 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .tone-card p {
+    font-size: 14px;
+    color: var(--grey-700);
+    line-height: 1.6;
+  }
+  .tone-pillars {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+  .pillar {
+    background: var(--black);
+    color: var(--white);
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Downloads ── */
+  .download-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .dl-card {
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .dl-card:hover { border-color: var(--grey-400); }
+  .dl-card .dl-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+  }
+  .dl-card .dl-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .dl-card .dl-type {
+    font-size: 12px;
+    color: var(--grey-500);
+  }
+
+  /* ── Footer ── */
+  footer {
+    padding: 40px 80px;
+    border-top: 1px solid var(--grey-200);
+    font-size: 13px;
+    color: var(--grey-400);
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-logo">core<span class="dot">.</span><span>auth</span></div>
+  <div class="nav-sub">Brand Guidelines</div>
+  <a href="#logo" class="active">Logo</a>
+  <a href="#colors">Colors</a>
+  <a href="#typography">Typography</a>
+  <a href="#spacing">Spacing</a>
+  <a href="#usage">Usage Rules</a>
+  <a href="#tone">Tone of Voice</a>
+  <a href="#assets">Assets</a>
+</nav>
+
+<!-- Main Content -->
+<main>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>core<span>.auth</span></h1>
+    <p>Brand guidelines for maintaining a consistent, trustworthy identity across every touchpoint. These rules ensure core.auth is always presented with clarity and precision.</p>
+    <div class="version">Version 1.0 &mdash; February 2026</div>
+  </div>
+
+  <!-- 01 · Logo -->
+  <section id="logo">
+    <div class="section-label">01 &mdash; Logo</div>
+    <div class="section-title">Our Mark</div>
+    <div class="section-desc">The core.auth logo consists of a wordmark with an integrated fingerprint symbol replacing the letter "o". The fingerprint represents biometric identity at the center of authentication. Always use the logo as provided — never recreate or alter it.</div>
+
+    <div class="logo-grid">
+      <!-- Dark version -->
+      <div class="logo-card dark">
+        <div class="logo-render">
+          <span style="font-weight:700;color:#FFF;">c</span>
+          <span class="fp">
+            <svg viewBox="0 0 44 56" fill="none">
+              <circle cx="22" cy="28" r="2" fill="#FFF"/>
+              <path d="M 19 22 C 13 24, 13 33, 22 35 C 29 36, 31 27, 26 23" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M 17 18 C 8 22, 7 37, 22 40 C 34 42, 38 27, 31 18 C 28 14, 24 16, 22 17" stroke="#DDD" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M 15 13 C 3 18, 1 42, 22 46 C 39 49, 44 27, 36 13 C 32 8, 26 10, 23 12" stroke="#BBB" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M 14 8 C -1 14, -3 46, 22 51 C 43 54, 49 26, 40 9 C 36 3, 28 5, 24 7" stroke="#888" stroke-width="1.2" stroke-linecap="round"/>
+              <path d="M 13 4 C -5 10, -6 50, 22 55 C 47 58, 53 25, 43 5" stroke="#555" stroke-width="1" stroke-linecap="round" stroke-dasharray="3 2"/>
+            </svg>
+          </span>
+          <span style="font-weight:700;color:#FFF;">re</span>
+          <span style="font-weight:700;color:#999;">.</span>
+          <span style="font-weight:300;color:#AAA;">auth</span>
+        </div>
+        <div class="label">Primary — Dark</div>
+      </div>
+
+      <!-- Light version -->
+      <div class="logo-card light">
+        <div class="logo-render">
+          <span style="font-weight:700;color:#111;">c</span>
+          <span class="fp">
+            <svg viewBox="0 0 44 56" fill="none">
+              <circle cx="22" cy="28" r="2" fill="#111"/>
+              <path d="M 19 22 C 13 24, 13 33, 22 35 C 29 36, 31 27, 26 23" stroke="#111" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M 17 18 C 8 22, 7 37, 22 40 C 34 42, 38 27, 31 18 C 28 14, 24 16, 22 17" stroke="#333" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M 15 13 C 3 18, 1 42, 22 46 C 39 49, 44 27, 36 13 C 32 8, 26 10, 23 12" stroke="#555" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M 14 8 C -1 14, -3 46, 22 51 C 43 54, 49 26, 40 9 C 36 3, 28 5, 24 7" stroke="#888" stroke-width="1.2" stroke-linecap="round"/>
+              <path d="M 13 4 C -5 10, -6 50, 22 55 C 47 58, 53 25, 43 5" stroke="#BBB" stroke-width="1" stroke-linecap="round" stroke-dasharray="3 2"/>
+            </svg>
+          </span>
+          <span style="font-weight:700;color:#111;">re</span>
+          <span style="font-weight:700;color:#777;">.</span>
+          <span style="font-weight:300;color:#555;">auth</span>
+        </div>
+        <div class="label">Primary — Light</div>
+      </div>
+
+      <!-- Monochrome white -->
+      <div class="logo-card dark">
+        <div class="logo-render">
+          <span style="font-weight:700;color:#FFF;">c</span>
+          <span class="fp">
+            <svg viewBox="0 0 44 56" fill="none">
+              <circle cx="22" cy="28" r="2" fill="#FFF"/>
+              <path d="M 19 22 C 13 24, 13 33, 22 35 C 29 36, 31 27, 26 23" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M 17 18 C 8 22, 7 37, 22 40 C 34 42, 38 27, 31 18 C 28 14, 24 16, 22 17" stroke="#FFF" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M 15 13 C 3 18, 1 42, 22 46 C 39 49, 44 27, 36 13 C 32 8, 26 10, 23 12" stroke="#FFF" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M 14 8 C -1 14, -3 46, 22 51 C 43 54, 49 26, 40 9 C 36 3, 28 5, 24 7" stroke="#FFF" stroke-width="1.2" stroke-linecap="round"/>
+              <path d="M 13 4 C -5 10, -6 50, 22 55 C 47 58, 53 25, 43 5" stroke="#FFF" stroke-width="1" stroke-linecap="round" stroke-dasharray="3 2"/>
+            </svg>
+          </span>
+          <span style="font-weight:700;color:#FFF;">re</span>
+          <span style="font-weight:700;color:#FFF;">.</span>
+          <span style="font-weight:300;color:#FFF;">auth</span>
+        </div>
+        <div class="label">Monochrome — White</div>
+      </div>
+
+      <!-- Monochrome black -->
+      <div class="logo-card light">
+        <div class="logo-render">
+          <span style="font-weight:700;color:#111;">c</span>
+          <span class="fp">
+            <svg viewBox="0 0 44 56" fill="none">
+              <circle cx="22" cy="28" r="2" fill="#111"/>
+              <path d="M 19 22 C 13 24, 13 33, 22 35 C 29 36, 31 27, 26 23" stroke="#111" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M 17 18 C 8 22, 7 37, 22 40 C 34 42, 38 27, 31 18 C 28 14, 24 16, 22 17" stroke="#111" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M 15 13 C 3 18, 1 42, 22 46 C 39 49, 44 27, 36 13 C 32 8, 26 10, 23 12" stroke="#111" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M 14 8 C -1 14, -3 46, 22 51 C 43 54, 49 26, 40 9 C 36 3, 28 5, 24 7" stroke="#111" stroke-width="1.2" stroke-linecap="round"/>
+              <path d="M 13 4 C -5 10, -6 50, 22 55 C 47 58, 53 25, 43 5" stroke="#111" stroke-width="1" stroke-linecap="round" stroke-dasharray="3 2"/>
+            </svg>
+          </span>
+          <span style="font-weight:700;color:#111;">re</span>
+          <span style="font-weight:700;color:#111;">.</span>
+          <span style="font-weight:300;color:#111;">auth</span>
+        </div>
+        <div class="label">Monochrome — Black</div>
+      </div>
+    </div>
+
+    <!-- Minimum Size -->
+    <h3 style="font-size:18px;font-weight:600;margin-bottom:16px;">Minimum Size</h3>
+    <div style="display:flex;align-items:flex-end;gap:48px;padding:32px;background:#fff;border-radius:12px;border:1px solid var(--grey-200);">
+      <div style="text-align:center;">
+        <div class="logo-render" style="font-size:48px;">
+          <span style="font-weight:700;color:#111;">c</span>
+          <span class="fp" style="width:32px;height:40px;">
+            <svg viewBox="0 0 44 56" fill="none"><circle cx="22" cy="28" r="2" fill="#111"/><path d="M 19 22 C 13 24, 13 33, 22 35 C 29 36, 31 27, 26 23" stroke="#111" stroke-width="1.8" stroke-linecap="round"/><path d="M 17 18 C 8 22, 7 37, 22 40 C 34 42, 38 27, 31 18 C 28 14, 24 16, 22 17" stroke="#333" stroke-width="1.6" stroke-linecap="round"/><path d="M 15 13 C 3 18, 1 42, 22 46 C 39 49, 44 27, 36 13 C 32 8, 26 10, 23 12" stroke="#555" stroke-width="1.4" stroke-linecap="round"/><path d="M 14 8 C -1 14, -3 46, 22 51 C 43 54, 49 26, 40 9 C 36 3, 28 5, 24 7" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </span>
+          <span style="font-weight:700;color:#111;">re</span>
+          <span style="font-weight:700;color:#777;">.</span>
+          <span style="font-weight:300;color:#555;">auth</span>
+        </div>
+        <div style="font-size:12px;color:var(--grey-500);margin-top:12px;">Print: 24mm wide</div>
+      </div>
+      <div style="text-align:center;">
+        <div class="logo-render size-sm">
+          <span style="font-weight:700;color:#111;">c</span>
+          <span class="fp">
+            <svg viewBox="0 0 44 56" fill="none"><circle cx="22" cy="28" r="2" fill="#111"/><path d="M 19 22 C 13 24, 13 33, 22 35 C 29 36, 31 27, 26 23" stroke="#111" stroke-width="1.8" stroke-linecap="round"/><path d="M 17 18 C 8 22, 7 37, 22 40 C 34 42, 38 27, 31 18 C 28 14, 24 16, 22 17" stroke="#333" stroke-width="1.6" stroke-linecap="round"/><path d="M 15 13 C 3 18, 1 42, 22 46 C 39 49, 44 27, 36 13 C 32 8, 26 10, 23 12" stroke="#555" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </span>
+          <span style="font-weight:700;color:#111;">re</span>
+          <span style="font-weight:700;color:#777;">.</span>
+          <span style="font-weight:300;color:#555;">auth</span>
+        </div>
+        <div style="font-size:12px;color:var(--grey-500);margin-top:12px;">Digital: 120px wide</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 · Colors -->
+  <section id="colors">
+    <div class="section-label">02 &mdash; Colors</div>
+    <div class="section-title">Color Palette</div>
+    <div class="section-desc">core.auth uses a restrained monochrome palette that conveys trust, precision, and security. The absence of color is intentional — it reinforces the brand's technical authority and lets the fingerprint mark speak for itself.</div>
+
+    <h3 style="font-size:16px;font-weight:600;margin-bottom:20px;">Primary Colors</h3>
+    <div class="color-grid" style="margin-bottom:40px;">
+      <div class="color-swatch">
+        <div class="swatch" style="background:#0A0A0A;"></div>
+        <div class="info"><div class="name">Black</div><div class="hex">#0A0A0A</div></div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch" style="background:#FFFFFF;border-bottom:1px solid #eee;"></div>
+        <div class="info"><div class="name">White</div><div class="hex">#FFFFFF</div></div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch" style="background:#111111;"></div>
+        <div class="info"><div class="name">Grey 900</div><div class="hex">#111111</div></div>
+      </div>
+    </div>
+
+    <h3 style="font-size:16px;font-weight:600;margin-bottom:20px;">Secondary Greys</h3>
+    <div class="color-grid">
+      <div class="color-swatch">
+        <div class="swatch" style="background:#555555;"></div>
+        <div class="info"><div class="name">Grey 700</div><div class="hex">#555555</div></div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch" style="background:#777777;"></div>
+        <div class="info"><div class="name">Grey 500</div><div class="hex">#777777</div></div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch" style="background:#999999;"></div>
+        <div class="info"><div class="name">Grey 400</div><div class="hex">#999999</div></div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch" style="background:#AAAAAA;"></div>
+        <div class="info"><div class="name">Grey 300</div><div class="hex">#AAAAAA</div></div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch" style="background:#CCCCCC;"></div>
+        <div class="info"><div class="name">Grey 200</div><div class="hex">#CCCCCC</div></div>
+      </div>
+      <div class="color-swatch">
+        <div class="swatch" style="background:#EEEEEE;"></div>
+        <div class="info"><div class="name">Grey 100</div><div class="hex">#EEEEEE</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 · Typography -->
+  <section id="typography">
+    <div class="section-label">03 &mdash; Typography</div>
+    <div class="section-title">Type System</div>
+    <div class="section-desc">Inter is the primary typeface for core.auth. Its clean geometry and excellent screen legibility make it ideal for both UI and marketing contexts. The contrast between bold and light weights mirrors the wordmark's own weight contrast between "core" and "auth".</div>
+
+    <div style="background:#fff;border:1px solid var(--grey-200);border-radius:12px;padding:40px;">
+      <div class="type-row">
+        <div class="type-label">Display</div>
+        <div class="type-sample" style="font-size:48px;font-weight:800;letter-spacing:-2px;">Identity at the core</div>
+      </div>
+      <div class="type-row">
+        <div class="type-label">Heading 1</div>
+        <div class="type-sample" style="font-size:36px;font-weight:700;letter-spacing:-1px;">Secure authentication layer</div>
+      </div>
+      <div class="type-row">
+        <div class="type-label">Heading 2</div>
+        <div class="type-sample" style="font-size:24px;font-weight:600;">Multi-factor verification</div>
+      </div>
+      <div class="type-row">
+        <div class="type-label">Body</div>
+        <div class="type-sample" style="font-size:16px;font-weight:400;color:var(--grey-700);">core.auth provides enterprise-grade identity verification built on biometric authentication, zero-trust architecture, and seamless developer integration.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-label">Caption</div>
+        <div class="type-sample" style="font-size:12px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--grey-500);">Identity at the core</div>
+      </div>
+    </div>
+
+    <div style="margin-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div style="background:#fff;border:1px solid var(--grey-200);border-radius:12px;padding:32px;">
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--grey-500);margin-bottom:16px;font-weight:500;">Primary Typeface</div>
+        <div style="font-size:32px;font-weight:700;margin-bottom:8px;">Inter</div>
+        <div style="font-size:14px;color:var(--grey-500);">Weights: 300 Light, 400 Regular, 500 Medium, 600 Semi-Bold, 700 Bold, 800 Extra-Bold</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--grey-200);border-radius:12px;padding:32px;">
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--grey-500);margin-bottom:16px;font-weight:500;">Monospace</div>
+        <div style="font-size:32px;font-weight:700;font-family:'SF Mono','Fira Code',monospace;">SF Mono</div>
+        <div style="font-size:14px;color:var(--grey-500);">Used for code snippets, API references, and technical documentation</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 · Spacing -->
+  <section id="spacing">
+    <div class="section-label">04 &mdash; Spacing</div>
+    <div class="section-title">Clear Space</div>
+    <div class="section-desc">Always maintain a minimum clear space around the logo equal to the height of the letter "c" in the wordmark. This ensures the mark is never crowded by surrounding elements.</div>
+
+    <div class="spacing-demo">
+      <div class="clearspace-box">
+        <span class="clearspace-label top">1x</span>
+        <span class="clearspace-label right">1x</span>
+        <span class="clearspace-label bottom">1x</span>
+        <span class="clearspace-label left">1x</span>
+        <div class="logo-render" style="font-size:42px;">
+          <span style="font-weight:700;color:#FFF;">c</span>
+          <span class="fp" style="width:28px;height:36px;">
+            <svg viewBox="0 0 44 56" fill="none"><circle cx="22" cy="28" r="2" fill="#FFF"/><path d="M 19 22 C 13 24, 13 33, 22 35 C 29 36, 31 27, 26 23" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><path d="M 17 18 C 8 22, 7 37, 22 40 C 34 42, 38 27, 31 18 C 28 14, 24 16, 22 17" stroke="#DDD" stroke-width="1.6" stroke-linecap="round"/><path d="M 15 13 C 3 18, 1 42, 22 46 C 39 49, 44 27, 36 13 C 32 8, 26 10, 23 12" stroke="#BBB" stroke-width="1.4" stroke-linecap="round"/><path d="M 14 8 C -1 14, -3 46, 22 51 C 43 54, 49 26, 40 9 C 36 3, 28 5, 24 7" stroke="#888" stroke-width="1.2" stroke-linecap="round"/><path d="M 13 4 C -5 10, -6 50, 22 55 C 47 58, 53 25, 43 5" stroke="#555" stroke-width="1" stroke-linecap="round" stroke-dasharray="3 2"/></svg>
+          </span>
+          <span style="font-weight:700;color:#FFF;">re</span>
+          <span style="font-weight:700;color:#999;">.</span>
+          <span style="font-weight:300;color:#AAA;">auth</span>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--grey-500);">The clear space unit (1x) equals the cap height of "c" in the logo. Scale proportionally with the logo.</p>
+  </section>
+
+  <!-- 05 · Usage Rules -->
+  <section id="usage">
+    <div class="section-label">05 &mdash; Usage Rules</div>
+    <div class="section-title">Do's &amp; Don'ts</div>
+    <div class="section-desc">Follow these rules to maintain brand integrity. When in doubt, use the primary logo on a dark background.</div>
+
+    <div class="rules-grid">
+      <div class="rule-card">
+        <div class="preview" style="background:var(--black);">
+          <div class="logo-render" style="font-size:32px;">
+            <span style="font-weight:700;color:#FFF;">c</span>
+            <span class="fp" style="width:22px;height:28px;"><svg viewBox="0 0 44 56" fill="none"><circle cx="22" cy="28" r="2" fill="#FFF"/><path d="M 19 22 C 13 24, 13 33, 22 35 C 29 36, 31 27, 26 23" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><path d="M 17 18 C 8 22, 7 37, 22 40 C 34 42, 38 27, 31 18 C 28 14, 24 16, 22 17" stroke="#DDD" stroke-width="1.6" stroke-linecap="round"/><path d="M 15 13 C 3 18, 1 42, 22 46 C 39 49, 44 27, 36 13 C 32 8, 26 10, 23 12" stroke="#BBB" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            <span style="font-weight:700;color:#FFF;">re</span>
+            <span style="font-weight:700;color:#999;">.</span>
+            <span style="font-weight:300;color:#AAA;">auth</span>
+          </div>
+        </div>
+        <div class="rule-info">
+          <span class="badge do">Do</span>
+          <span class="rule-text">Use the logo on solid dark or light backgrounds with sufficient contrast</span>
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <div class="preview" style="background:linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb);">
+          <div class="logo-render" style="font-size:32px;opacity:0.7;">
+            <span style="font-weight:700;color:#FFF;">c</span>
+            <span class="fp" style="width:22px;height:28px;"><svg viewBox="0 0 44 56" fill="none"><circle cx="22" cy="28" r="2" fill="#FFF"/><path d="M 19 22 C 13 24, 13 33, 22 35 C 29 36, 31 27, 26 23" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><path d="M 17 18 C 8 22, 7 37, 22 40 C 34 42, 38 27, 31 18 C 28 14, 24 16, 22 17" stroke="#DDD" stroke-width="1.6" stroke-linecap="round"/><path d="M 15 13 C 3 18, 1 42, 22 46 C 39 49, 44 27, 36 13 C 32 8, 26 10, 23 12" stroke="#BBB" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            <span style="font-weight:700;color:#FFF;">re</span>
+            <span style="font-weight:700;color:#FFF;">.</span>
+            <span style="font-weight:300;color:#FFF;">auth</span>
+          </div>
+        </div>
+        <div class="rule-info">
+          <span class="badge dont">Don't</span>
+          <span class="rule-text">Place the logo on busy, patterned, or multi-colored backgrounds</span>
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <div class="preview">
+          <div class="logo-render" style="font-size:32px;">
+            <span style="font-weight:700;color:#111;">c</span>
+            <span class="fp" style="width:22px;height:28px;"><svg viewBox="0 0 44 56" fill="none"><circle cx="22" cy="28" r="2" fill="#111"/><path d="M 19 22 C 13 24, 13 33, 22 35 C 29 36, 31 27, 26 23" stroke="#111" stroke-width="1.8" stroke-linecap="round"/><path d="M 17 18 C 8 22, 7 37, 22 40 C 34 42, 38 27, 31 18 C 28 14, 24 16, 22 17" stroke="#333" stroke-width="1.6" stroke-linecap="round"/><path d="M 15 13 C 3 18, 1 42, 22 46 C 39 49, 44 27, 36 13 C 32 8, 26 10, 23 12" stroke="#555" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            <span style="font-weight:700;color:#111;">re</span>
+            <span style="font-weight:700;color:#777;">.</span>
+            <span style="font-weight:300;color:#555;">auth</span>
+          </div>
+        </div>
+        <div class="rule-info">
+          <span class="badge do">Do</span>
+          <span class="rule-text">Maintain the weight contrast: "core" bold, "auth" light</span>
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <div class="preview">
+          <div style="font-family:serif;font-size:32px;font-weight:700;color:#111;letter-spacing:-1px;">core<span style="color:#777;">.</span><span style="color:#555;">auth</span></div>
+        </div>
+        <div class="rule-info">
+          <span class="badge dont">Don't</span>
+          <span class="rule-text">Substitute the typeface or remove the fingerprint symbol</span>
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <div class="preview">
+          <div class="logo-render" style="font-size:32px;">
+            <span style="font-weight:700;color:#111;">c</span>
+            <span class="fp" style="width:22px;height:28px;"><svg viewBox="0 0 44 56" fill="none"><circle cx="22" cy="28" r="2" fill="#111"/><path d="M 19 22 C 13 24, 13 33, 22 35 C 29 36, 31 27, 26 23" stroke="#111" stroke-width="1.8" stroke-linecap="round"/><path d="M 17 18 C 8 22, 7 37, 22 40 C 34 42, 38 27, 31 18 C 28 14, 24 16, 22 17" stroke="#333" stroke-width="1.6" stroke-linecap="round"/><path d="M 15 13 C 3 18, 1 42, 22 46 C 39 49, 44 27, 36 13 C 32 8, 26 10, 23 12" stroke="#555" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+            <span style="font-weight:700;color:#111;">re</span>
+            <span style="font-weight:700;color:#777;">.</span>
+            <span style="font-weight:300;color:#555;">auth</span>
+          </div>
+        </div>
+        <div class="rule-info">
+          <span class="badge do">Do</span>
+          <span class="rule-text">Use the dot separator between "core" and "auth" — it's part of the identity</span>
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <div class="preview">
+          <div style="font-family:'Inter',sans-serif;font-size:32px;letter-spacing:-1px;color:#111;transform:skewX(-10deg);">
+            <span style="font-weight:700;">core</span><span style="font-weight:700;color:#777;">.</span><span style="font-weight:300;color:#555;">auth</span>
+          </div>
+        </div>
+        <div class="rule-info">
+          <span class="badge dont">Don't</span>
+          <span class="rule-text">Stretch, skew, rotate, or apply effects to the logo</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 · Tone of Voice -->
+  <section id="tone">
+    <div class="section-label">06 &mdash; Tone of Voice</div>
+    <div class="section-title">How We Sound</div>
+    <div class="section-desc">core.auth speaks with quiet confidence. We don't oversell — we let precision and reliability do the talking. Our voice reflects the same values as our visual identity: clarity, trust, and technical depth.</div>
+
+    <div class="tone-pillars">
+      <span class="pillar">Precise</span>
+      <span class="pillar">Confident</span>
+      <span class="pillar">Minimal</span>
+      <span class="pillar">Human</span>
+    </div>
+
+    <div class="tone-grid">
+      <div class="tone-card">
+        <h4>Precise, not verbose</h4>
+        <p>Say exactly what's needed, nothing more. Every word should earn its place. Technical accuracy matters — never approximate when you can be exact.</p>
+      </div>
+      <div class="tone-card">
+        <h4>Confident, not arrogant</h4>
+        <p>We know what we've built is solid. State facts directly without hedging, but never talk down to users or competitors. Let the product speak.</p>
+      </div>
+      <div class="tone-card">
+        <h4>Minimal, not cold</h4>
+        <p>Brevity shows respect for people's time. But minimal doesn't mean robotic — warmth lives in clarity. Help people feel secure, not processed.</p>
+      </div>
+      <div class="tone-card">
+        <h4>Human, not casual</h4>
+        <p>We protect real people's identities. Speak like a trusted engineer, not a chatbot. Professional but approachable, technical but never alienating.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div style="background:#E8F5E9;border-radius:12px;padding:32px;">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#2E7D32;margin-bottom:16px;">We say</div>
+        <p style="font-size:15px;color:#1B5E20;line-height:1.7;">"Authenticate in under 200ms with zero-knowledge proof." <br><br>"Your identity. Your device. Nothing stored." <br><br>"Built for developers who ship."</p>
+      </div>
+      <div style="background:#FFEBEE;border-radius:12px;padding:32px;">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#C62828;margin-bottom:16px;">We don't say</div>
+        <p style="font-size:15px;color:#B71C1C;line-height:1.7;">"The most revolutionary, game-changing auth solution ever!" <br><br>"We're disrupting the identity space!" <br><br>"Super easy, anyone can do it!"</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 · Assets -->
+  <section id="assets">
+    <div class="section-label">07 &mdash; Assets</div>
+    <div class="section-title">Brand Assets</div>
+    <div class="section-desc">Download the official core.auth logo files. Always use these provided assets — never screenshot or recreate the logo.</div>
+
+    <div class="download-grid">
+      <div class="dl-card">
+        <div class="dl-icon" style="font-size:24px;color:var(--grey-400);">&#9724;</div>
+        <div class="dl-name">Logo — Dark</div>
+        <div class="dl-type">SVG</div>
+      </div>
+      <div class="dl-card">
+        <div class="dl-icon" style="font-size:24px;color:var(--grey-400);">&#9723;</div>
+        <div class="dl-name">Logo — Light</div>
+        <div class="dl-type">SVG</div>
+      </div>
+      <div class="dl-card">
+        <div class="dl-icon" style="font-size:24px;color:var(--grey-400);">&#9899;</div>
+        <div class="dl-name">Logo — PNG</div>
+        <div class="dl-type">PNG @4x</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <span>core.auth Brand Guidelines v1.0</span>
+    <span>February 2026</span>
+  </footer>
+
+</main>
+
+<script>
+  // Active nav link on scroll
+  const sections = document.querySelectorAll('section');
+  const navLinks = document.querySelectorAll('nav a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 120) current = s.id;
+    });
+    navLinks.forEach(a => {
+      a.classList.remove('active');
+      if (a.getAttribute('href') === '#' + current) a.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

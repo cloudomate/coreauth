@@ -82,7 +82,7 @@ Services:
 
 4. **Start frontend:**
    ```bash
-   cd frontend
+   cd coreauth-portal
    npm install
    npm start
    ```
