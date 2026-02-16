@@ -9,72 +9,140 @@
 ### 1. Clone and Start
 
 ```bash
-# Clone the repository
-git clone <your-repo>
-cd ciam
-
-# Start all services with Docker Compose
-./docker-start.sh
+git clone https://github.com/cloudomate/coreauth.git
+cd coreauth
+./start.sh
 ```
 
 This will start:
 - PostgreSQL database (port 5432)
 - Redis cache (port 6379)
 - Backend API (port 8000)
-- Frontend UI (port 3000)
+- Frontend Dashboard (port 3000)
 
 ### 2. Access the Application
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Health**: http://localhost:8000/health
+| Service | URL |
+|---------|-----|
+| Frontend Dashboard | http://localhost:3000 |
+| Backend API | http://localhost:8000 |
+| API Health Check | http://localhost:8000/health |
 
-### 3. First Login
-
-1. Create an organization (tenant) via signup
-2. Verify your email (check Docker logs for email content in dev mode)
-3. Login with your credentials
-4. If MFA is required, scan QR code with Google/Microsoft Authenticator
-
-## Development Mode
-
-For development with hot-reload:
+### 3. Create a Tenant
 
 ```bash
-# Frontend development
+curl -X POST http://localhost:8000/api/tenants \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Acme Corp",
+    "slug": "acme",
+    "admin_email": "admin@acme.com",
+    "admin_password": "SecureP@ssw0rd!",
+    "admin_full_name": "Admin User"
+  }'
+```
+
+### 4. Login
+
+```bash
+curl -X POST http://localhost:8000/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "tenant_id": "YOUR_TENANT_ID",
+    "email": "admin@acme.com",
+    "password": "SecureP@ssw0rd!"
+  }'
+```
+
+### 5. Explore the Dashboard
+
+Open http://localhost:3000 and log in with your admin credentials. From the dashboard you can manage:
+- Users and groups
+- OAuth2 applications
+- Security policies (MFA, password rules, lockout)
+- SSO/OIDC provider connections
+- Branding (logo, colors, app name)
+- Email templates
+- Webhooks
+- Audit logs
+
+## Local Development
+
+### Backend (Rust)
+
+```bash
+# Start infrastructure
+docker compose up postgres redis -d
+
+# Run backend
+cd coreauth-core
+cp .env.example .env
+cargo run --bin coreauth-api
+```
+
+### Frontend (React)
+
+```bash
 cd coreauth-portal
 npm install
 npm run dev
+```
 
-# Backend development
-cd backend
-cargo watch -x run
+### Sample App
+
+```bash
+cd samples/corerun-auth
+npm install
+npm run dev
 ```
 
 ## Environment Variables
 
-Create a `.env` file in the root directory:
+Copy `.env.example` to `.env` in the project root:
 
 ```env
 # Database
-DATABASE_URL=postgresql://coreauth:coreauth@localhost:5432/coreauth
+DATABASE_URL=postgresql://coreauth:change-this-in-production@postgres:5432/coreauth
 
 # Redis
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://redis:6379
 
-# JWT
+# JWT (generate with: openssl rand -base64 64)
 JWT_SECRET=your-secret-key-change-in-production
 
-# Email (for production)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
+# Email (development)
+EMAIL_PROVIDER=mailhog
+MAILHOG_HOST=localhost
+MAILHOG_PORT=1025
+
+# Frontend
+VITE_API_URL=http://localhost:8000
+```
+
+See `.env.example` for the complete list of configuration options.
+
+## Docker Commands
+
+```bash
+# Start all services
+docker compose up -d
+
+# Rebuild and start
+docker compose up --build -d
+
+# View logs
+docker compose logs -f
+
+# Stop all services
+docker compose down
+
+# Stop and remove volumes (resets database)
+docker compose down -v
 ```
 
 ## Next Steps
 
-- [Architecture Overview](ARCHITECTURE.md)
-- [Authentication Guide](AUTHENTICATION.md)
-- [Multi-Tenant Setup](MULTI_TENANT_ARCHITECTURE.md)
-- [Deployment Guide](../DEPLOYMENT.md)
+- [Developer Guide](DEVELOPER_GUIDE.md) - Full walkthrough from tenant creation to OAuth2 integration
+- [Architecture](ARCHITECTURE.md) - System design and crate structure
+- [SDK Integration](SDK_INTEGRATION.md) - Integrate CoreAuth into your application
+- [Deployment](DEPLOYMENT.md) - Production deployment guide

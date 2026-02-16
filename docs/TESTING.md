@@ -2,222 +2,101 @@
 
 ## Overview
 
-CoreAuth includes comprehensive testing coverage across unit tests, integration tests, and end-to-end tests.
+CoreAuth includes backend unit tests (Rust), integration test suites (bash scripts), and comprehensive test case documentation.
 
-## Running Tests
-
-### Backend Tests
+## Backend Tests (Rust)
 
 ```bash
-cd backend
+cd coreauth-core
 
 # Run all tests
 cargo test
 
-# Run specific test suite
-cargo test --test integration_tests
+# Run a specific test with output
+cargo test test_name -- --nocapture
 
 # Run with logging
 RUST_LOG=debug cargo test
 
-# Run tests in Docker
-docker compose exec backend cargo test
+# Offline mode (no database)
+SQLX_OFFLINE=true cargo test
 ```
 
-### Frontend Tests
+## Integration Tests (Bash)
+
+The `tests/` directory contains bash-based integration tests that run against a live Docker stack.
+
+### Running Integration Tests
 
 ```bash
-cd coreauth-portal
+# Start the full stack first
+docker compose up -d
 
-# Run tests (when implemented)
-npm test
+# Run all test suites
+bash tests/run_tests.sh
 
-# Run e2e tests
-npm run test:e2e
+# Run a specific suite
+bash tests/suites/01_health.sh
+bash tests/suites/02_auth_register.sh
+bash tests/suites/03_auth_login.sh
 ```
 
-## Test Structure
+### Test Suites
 
-### Backend Tests
+| Suite | Description |
+| ----- | ----------- |
+| `01_health.sh` | Health check endpoints |
+| `02_auth_register.sh` | User registration flows |
+| `03_auth_login.sh` | Login, token refresh, logout |
 
-```
-coreauth-core/
-├── tests/
-│   ├── integration/          # Integration tests
-│   │   ├── auth_tests.rs     # Authentication flows
-│   │   ├── mfa_tests.rs      # MFA enrollment & verification
-│   │   ├── tenant_tests.rs   # Multi-tenant operations
-│   │   └── hierarchy_tests.rs # Organizational hierarchy
-│   └── unit/                 # Unit tests (in each module)
-```
+### Test Helpers
 
-### Key Test Cases
+Tests use helper functions from `tests/helpers.sh`:
 
-1. **Authentication**
-   - User registration
-   - Login with email/password
-   - MFA enrollment and verification
-   - Token refresh
-   - Logout
+- `api()` - Make HTTP requests to the backend API
+- `run_test()` - Run a test and check HTTP status code
+- `run_test_body()` - Run a test and check response body content
 
-2. **Multi-Tenancy**
-   - Tenant creation
-   - User-tenant associations
-   - Tenant isolation
-   - Cross-tenant access prevention
+## Test Coverage Areas
 
-3. **Authorization**
-   - Role-based access control
-   - Permission checks
-   - Hierarchical permissions
-   - Tuple-based authorization
+- Authentication flows (register, login, refresh, logout)
+- MFA enrollment and verification (TOTP, SMS, backup codes)
+- Passwordless authentication (magic links, OTP)
+- Multi-tenant isolation
+- Role-based access control
+- JWT token validation
+- Password hashing and policies
+- OAuth2/OIDC flows
+- FGA permission checks
+- SCIM provisioning
+- Webhook delivery
+- Email/SMS delivery (mocked in tests)
+- Session management
+- Audit logging
 
-4. **MFA**
-   - TOTP enrollment
-   - QR code generation
-   - Code verification
-   - Backup codes
-   - Enrollment token flow
+## Comprehensive Test Cases
 
-## Integration Testing with Docker
-
-### Setup
-
-```bash
-# Start test database
-docker compose up -d postgres redis
-
-# Run migrations
-docker compose exec backend ./migrations/run.sh
-
-# Run integration tests
-docker compose exec backend cargo test --test integration_tests
-```
-
-### Test Database
-
-Tests use a separate database schema to avoid conflicts:
-
-```sql
-CREATE DATABASE coreauth_test;
-```
-
-Set `TEST_DATABASE_URL` in your environment for test isolation.
-
-## Manual Testing Workflows
-
-### 1. Complete User Signup & MFA Flow
-
-```bash
-# 1. Start services
-./docker-start.sh
-
-# 2. Create organization via API or UI
-curl -X POST http://localhost:8000/api/tenants \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test Company",
-    "slug": "testco",
-    "admin_email": "admin@testco.com",
-    "admin_password": "SecurePass123!"
-  }'
-
-# 3. Enable MFA requirement in Security settings
-
-# 4. Login - should redirect to MFA setup
-# 5. Scan QR code with authenticator app
-# 6. Enter verification code
-# 7. Save backup codes
-# 8. Successfully logged in
-```
-
-### 2. Multi-Tenant Isolation Test
-
-```bash
-# Create Tenant A
-# Create Tenant B
-# Create user in Tenant A
-# Verify user cannot access Tenant B resources
-```
-
-### 3. Hierarchical Organization Test
-
-```bash
-# Create parent organization
-# Create child organization
-# Verify hierarchy relationships
-# Test permission inheritance
-```
-
-## Test Coverage
-
-Current coverage areas:
-- ✅ Authentication flows
-- ✅ MFA enrollment and verification
-- ✅ Multi-tenant isolation
-- ✅ Role-based access control
-- ✅ JWT token validation
-- ✅ Password hashing and validation
-- ⚠️ Email delivery (mocked in tests)
-- ⚠️ SMS delivery (mocked in tests)
-- 🚧 WebAuthn (planned)
-- 🚧 OAuth2 flows (planned)
+See `tests/COMPREHENSIVE_TEST_CASES.md` for the full test plan with detailed scenarios.
 
 ## Debugging Tests
 
-### View Test Logs
-
 ```bash
-# Verbose test output
+# Verbose output
 cargo test -- --nocapture
 
 # Filter specific tests
 cargo test test_mfa_enrollment -- --nocapture
 
-# Show all logs
+# Full trace logging
 RUST_LOG=trace cargo test
 ```
 
-### Database Inspection During Tests
+## Docker-Based Testing
 
 ```bash
-# Connect to test database
-docker compose exec postgres psql -U coreauth -d coreauth_test
+# Build test image
+docker build -f coreauth-core/Dockerfile.test -t coreauth-test coreauth-core/
 
-# View test data
-SELECT * FROM users;
-SELECT * FROM mfa_methods;
+# Run tests in container
+docker run --rm coreauth-test
 ```
-
-## Performance Testing
-
-### Load Testing
-
-```bash
-# Install Apache Bench
-apt-get install apache2-utils
-
-# Test login endpoint
-ab -n 1000 -c 10 -p login.json -T application/json \
-  http://localhost:8000/api/auth/login
-
-# Test with authentication
-ab -n 1000 -c 10 -H "Authorization: Bearer TOKEN" \
-  http://localhost:8000/api/auth/me
-```
-
-### Benchmark Tests
-
-```bash
-cd backend
-cargo bench
-```
-
-## Continuous Integration
-
-Tests run automatically on:
-- Pull requests
-- Commits to main branch
-- Nightly builds
-
-See `.github/workflows/tests.yml` for CI configuration.

@@ -7,10 +7,7 @@
 #### 1. Prepare Environment
 
 ```bash
-# Create production environment file
 cp .env.example .env
-
-# Edit .env with production values
 nano .env
 ```
 
@@ -29,51 +26,42 @@ JWT_SECRET=your-very-long-secret-key-change-this
 # Application
 RUST_LOG=info
 FRONTEND_URL=https://your-domain.com
-BACKEND_URL=https://api.your-domain.com
+APP_URL=https://api.your-domain.com
 
 # Email (Production SMTP)
+EMAIL_PROVIDER=smtp
 SMTP_HOST=smtp.sendgrid.net
 SMTP_PORT=587
 SMTP_USERNAME=apikey
 SMTP_PASSWORD=your-sendgrid-api-key
-SMTP_FROM=noreply@your-domain.com
+EMAIL_FROM=noreply@your-domain.com
 
-# SMS (Optional - Twilio)
-SMS_PROVIDER=twilio
-TWILIO_ACCOUNT_SID=your-account-sid
-TWILIO_AUTH_TOKEN=your-auth-token
-TWILIO_PHONE_NUMBER=+1234567890
+# SMS (Optional)
+SMS_ENABLED=false
+# SMS_PROVIDER=twilio
+# TWILIO_ACCOUNT_SID=your-account-sid
+# TWILIO_AUTH_TOKEN=your-auth-token
+# TWILIO_FROM_NUMBER=+1234567890
+
+# CORS
+CORS_ORIGINS=https://your-domain.com
 ```
 
-#### 2. Deploy with Docker Compose
+#### 2. Deploy
 
 ```bash
-# Build production images
-docker compose -f docker-compose.prod.yml build
-
-# Start services
-docker compose -f docker-compose.prod.yml up -d
-
-# Check status
-docker compose -f docker-compose.prod.yml ps
-
-# View logs
-docker compose -f docker-compose.prod.yml logs -f
+docker compose up --build -d
+docker compose ps
+docker compose logs -f
 ```
 
-#### 3. Run Migrations
-
-```bash
-docker compose exec backend ./docker-entrypoint.sh migrate
-```
-
-#### 4. Setup Reverse Proxy (Nginx)
+#### 3. Reverse Proxy (Nginx)
 
 ```nginx
 # /etc/nginx/sites-available/coreauth
 
 upstream backend {
-    server localhost:8000;
+    server localhost:3000;
 }
 
 upstream frontend {
@@ -127,312 +115,151 @@ server {
 }
 ```
 
-Enable and restart Nginx:
-
 ```bash
 ln -s /etc/nginx/sites-available/coreauth /etc/nginx/sites-enabled/
 nginx -t
 systemctl restart nginx
 ```
 
-### Cloud Deployment Options
+### Cloud Deployment
 
 #### AWS (ECS + RDS)
 
-1. **Setup RDS PostgreSQL**
-   - Engine: PostgreSQL 14+
-   - Instance: db.t3.medium (minimum)
-   - Storage: 50GB+ gp3
-   - Backup retention: 7 days
+1. **RDS PostgreSQL** - Engine: PostgreSQL 16, Instance: db.t3.medium+, Storage: 50GB+ gp3
+2. **ElastiCache Redis** - Engine: Redis 7, Node type: cache.t3.micro+
+3. **Deploy to ECS:**
 
-2. **Setup ElastiCache Redis**
-   - Engine: Redis 6+
-   - Node type: cache.t3.micro
-
-3. **Deploy to ECS**
-   ```bash
-   # Build and push images
-   docker build -t your-registry/coreauth-core:latest coreauth-core/
-   docker build -t your-registry/coreauth-ui:latest coreauth-portal/
-   docker push your-registry/coreauth-core:latest
-   docker push your-registry/coreauth-ui:latest
-
-   # Create ECS task definition and service
-   aws ecs create-task-definition --cli-input-json file://ecs-task-def.json
-   aws ecs create-service --cluster coreauth --service-name coreauth-core --task-definition coreauth-core
-   ```
+```bash
+docker build -t your-registry/coreauth-core:latest coreauth-core/
+docker build -t your-registry/coreauth-ui:latest coreauth-portal/
+docker push your-registry/coreauth-core:latest
+docker push your-registry/coreauth-ui:latest
+```
 
 #### Google Cloud (Cloud Run + Cloud SQL)
 
-1. **Setup Cloud SQL**
-   ```bash
-   gcloud sql instances create coreauth-db \
-     --database-version=POSTGRES_14 \
-     --tier=db-f1-micro \
-     --region=us-central1
-   ```
+```bash
+# Backend
+gcloud builds submit --tag gcr.io/PROJECT_ID/coreauth-core coreauth-core/
+gcloud run deploy coreauth-core \
+  --image gcr.io/PROJECT_ID/coreauth-core \
+  --platform managed \
+  --region us-central1 \
+  --add-cloudsql-instances PROJECT_ID:us-central1:coreauth-db
 
-2. **Deploy to Cloud Run**
-   ```bash
-   # Build and deploy backend
-   gcloud builds submit --tag gcr.io/PROJECT_ID/coreauth-core coreauth-core/
-   gcloud run deploy coreauth-core \
-     --image gcr.io/PROJECT_ID/coreauth-core \
-     --platform managed \
-     --region us-central1 \
-     --add-cloudsql-instances PROJECT_ID:us-central1:coreauth-db
+# Frontend
+gcloud builds submit --tag gcr.io/PROJECT_ID/coreauth-ui coreauth-portal/
+gcloud run deploy coreauth-ui \
+  --image gcr.io/PROJECT_ID/coreauth-ui \
+  --platform managed \
+  --region us-central1
+```
 
-   # Build and deploy frontend
-   gcloud builds submit --tag gcr.io/PROJECT_ID/coreauth-ui coreauth-portal/
-   gcloud run deploy coreauth-ui \
-     --image gcr.io/PROJECT_ID/coreauth-ui \
-     --platform managed \
-     --region us-central1
-   ```
+### Kubernetes (Helm)
 
-#### DigitalOcean (App Platform)
-
-1. **Create App via UI or CLI**
-   ```bash
-   doctl apps create --spec .do/app.yaml
-   ```
-
-2. **Configure Managed Database**
-   - PostgreSQL 14
-   - Redis 6
-   - Link to app
-
-## Kubernetes Deployment
-
-### Using Helm
+Helm charts are in `deploy/helm/coreauth/`.
 
 ```bash
-# Add CoreAuth Helm repo (if published)
-helm repo add coreauth https://charts.coreauth.dev
-helm repo update
-
-# Install
-helm install coreauth coreauth/coreauth \
+helm install coreauth deploy/helm/coreauth/ \
   --set postgresql.enabled=true \
   --set redis.enabled=true \
   --set ingress.enabled=true \
   --set ingress.hosts[0].host=coreauth.example.com
 ```
 
-### Manual Kubernetes Deployment
+### On-Premise (Docker Compose)
 
-See `k8s/` directory for:
-- `deployment.yaml` - Backend and Frontend deployments
-- `service.yaml` - Services
-- `ingress.yaml` - Ingress configuration
-- `configmap.yaml` - Configuration
-- `secrets.yaml` - Secrets (base64 encoded)
+Self-hosted configuration is in `deploy/onprem/docker compose/`.
 
-```bash
-kubectl apply -f k8s/
-```
+---
 
 ## Database Migrations
 
-### Running Migrations
+Migrations are in `coreauth-core/migrations/` (001-013). They run automatically on startup via `docker-entrypoint.sh`.
+
+### Manual Migration
 
 ```bash
-# Using Docker
-docker compose exec backend sqlx migrate run
-
-# Directly with sqlx-cli
-cargo install sqlx-cli
-sqlx migrate run
-
-# Manual
-psql $DATABASE_URL < coreauth-core/migrations/001_init.sql
+# Apply all migrations
+psql $DATABASE_URL < coreauth-core/migrations/001_core.sql
+psql $DATABASE_URL < coreauth-core/migrations/002_auth.sql
+# ... through 013
 ```
 
-### Creating New Migrations
+---
 
-```bash
-# Create new migration
-sqlx migrate add <migration_name>
+## Health Checks
 
-# Edit the generated SQL file
-vim coreauth-core/migrations/<timestamp>_<migration_name>.sql
+- **Backend:** `GET /health`
+- **PostgreSQL:** `pg_isready -U coreauth`
+- **Redis:** `redis-cli ping`
 
-# Test migration
-sqlx migrate run
-```
+---
 
 ## Monitoring & Logging
 
-### Application Logs
-
 ```bash
-# Docker Compose
-docker compose logs -f backend
-docker compose logs -f frontend
+# Docker Compose logs
+docker compose logs -f coreauth-core
+docker compose logs -f coreauth-ui
 
 # Kubernetes
 kubectl logs -f deployment/coreauth-core
-kubectl logs -f deployment/coreauth-ui
 ```
 
-### Health Checks
-
-- Backend: `http://localhost:8000/health`
-- Frontend: `http://localhost:3000/`
-- Database: Check PostgreSQL connection
-- Redis: Check Redis connection
-
-### Metrics (Prometheus)
-
-Backend exposes Prometheus metrics at `/metrics`:
-
-```yaml
-# prometheus.yml
-scrape_configs:
-  - job_name: 'coreauth-core'
-    static_configs:
-      - targets: ['localhost:8000']
-    metrics_path: '/metrics'
-```
+---
 
 ## Backup & Recovery
 
 ### Database Backup
 
 ```bash
-# Automated daily backups
+# Backup
 docker compose exec postgres pg_dump -U coreauth coreauth > backup_$(date +%Y%m%d).sql
 
 # Restore
-docker compose exec -T postgres psql -U coreauth coreauth < backup_20260202.sql
+docker compose exec -T postgres psql -U coreauth coreauth < backup.sql
 ```
 
-### Disaster Recovery
-
-1. **Database restore from backup**
-2. **Restore Redis cache** (optional, rebuilds automatically)
-3. **Redeploy application containers**
-4. **Verify all services healthy**
+---
 
 ## Security Checklist
 
-- [ ] Change all default passwords
-- [ ] Use strong JWT secret (64+ characters)
-- [ ] Enable HTTPS/TLS everywhere
-- [ ] Configure firewall rules
+- [ ] Change all default passwords and JWT secret
+- [ ] Use HTTPS/TLS everywhere
+- [ ] Configure firewall rules (only expose ports 80/443)
 - [ ] Enable rate limiting
-- [ ] Setup monitoring and alerting
-- [ ] Regular security updates
-- [ ] Database encryption at rest
-- [ ] Backup encryption
-- [ ] Audit logging enabled
-- [ ] MFA enforced for admin users
+- [ ] Set up monitoring and alerting
+- [ ] Apply regular security updates
+- [ ] Enable database encryption at rest
+- [ ] Enable audit logging
+- [ ] Enforce MFA for admin users
+- [ ] Set strong password policies
 
-## Performance Tuning
-
-### Database
-
-```sql
--- Increase connection pool
-ALTER SYSTEM SET max_connections = '200';
-
--- Optimize for SSDs
-ALTER SYSTEM SET random_page_cost = '1.1';
-
--- Increase shared buffers
-ALTER SYSTEM SET shared_buffers = '256MB';
-```
-
-### Redis
-
-```conf
-# redis.conf
-maxmemory 256mb
-maxmemory-policy allkeys-lru
-```
-
-### Backend
-
-```env
-# Increase worker threads
-TOKIO_WORKER_THREADS=8
-
-# Database connection pool
-DATABASE_POOL_MAX_CONNECTIONS=20
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**1. Database connection failed**
-```bash
-# Check database is running
-docker compose ps postgres
-
-# Verify connection string
-docker compose exec backend env | grep DATABASE_URL
-
-# Test connection
-docker compose exec postgres psql -U coreauth -d coreauth
-```
-
-**2. Migration failed**
-```bash
-# Check migration status
-sqlx migrate info
-
-# Revert last migration
-sqlx migrate revert
-
-# Force migration
-sqlx migrate run --force
-```
-
-**3. Redis connection failed**
-```bash
-# Check Redis is running
-docker compose ps redis
-
-# Test connection
-docker compose exec redis redis-cli ping
-```
+---
 
 ## Scaling
 
-### Horizontal Scaling
+### Horizontal
 
-- Run multiple backend instances behind load balancer
+- Run multiple backend instances behind a load balancer
 - Use shared Redis for session storage
 - Database read replicas for read-heavy workloads
 
-### Vertical Scaling
+### Vertical
 
 - Increase container CPU/memory limits
 - Scale PostgreSQL instance size
 - Increase Redis memory
 
-## Updates & Maintenance
+---
 
-### Rolling Updates
+## Rolling Updates
 
 ```bash
-# Pull latest images
-docker compose pull
-
-# Recreate containers (zero downtime)
-docker compose up -d --no-deps --build backend
+# Rebuild and restart
+docker compose up -d --no-deps --build coreauth-core
 
 # Verify health
 curl http://localhost:8000/health
-```
-
-### Database Maintenance
-
-```bash
-# Vacuum database
-docker compose exec postgres vacuumdb -U coreauth -d coreauth --analyze
-
-# Reindex
-docker compose exec postgres reindexdb -U coreauth -d coreauth
 ```
