@@ -198,7 +198,7 @@ npm run dev                              # Dev server on port 3001
 
 ## SDKs
 
-Official SDKs for integrating your application with CoreAuth:
+Official SDKs for integrating your application with CoreAuth, more will come soon:
 
 | SDK | Install | Status |
 |-----|---------|--------|
